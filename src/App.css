@@ -1,0 +1,5 @@
+/* App-specific styles - XUI handles most styling */
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+}
