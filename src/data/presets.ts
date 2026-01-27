@@ -1,4 +1,4 @@
-import type { QueryState } from '../types/query';
+import type { QueryState, TimePeriod } from '../types/query';
 
 export interface QueryPreset {
   id: string;
@@ -8,15 +8,17 @@ export interface QueryPreset {
 }
 
 // Helper to get time period for last N hours
-function getLastNHours(hours: number): { since: string; until: string } {
+function getLastNHours(hours: number): TimePeriod {
   const now = new Date();
   const since = new Date(now.getTime() - hours * 60 * 60 * 1000);
   
   const formatForInput = (date: Date) => date.toISOString().slice(0, 16);
   
   return {
+    mode: 'absolute',
     since: formatForInput(since),
     until: formatForInput(now),
+    relative: `${hours}h ago`,
   };
 }
 

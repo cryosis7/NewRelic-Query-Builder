@@ -12,8 +12,10 @@ function getDefaultTimePeriod(): TimePeriod {
   };
   
   return {
+    mode: 'absolute',
     since: formatForInput(oneHourAgo),
     until: formatForInput(now),
+    relative: '1h ago',
   };
 }
 
@@ -44,6 +46,35 @@ function formatDateForNrql(isoString: string): string {
   const second = '00';
   
   return `${year}-${month}-${day} ${hour}:${minute}:${second} ${timezone}`;
+}
+
+function parseRelativeTimeInput(value: string): string | null {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+
+  const match = normalized.match(/^([0-9]+)\s*(m|min|mins|minute|minutes|h|hr|hrs|hour|hours|d|day|days)\s*(ago)?$/i);
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+
+  const unitRaw = match[2].toLowerCase();
+  let unit: 'minutes' | 'hours' | 'days';
+  if (['m', 'min', 'mins', 'minute', 'minutes'].includes(unitRaw)) {
+    unit = 'minutes';
+  } else if (['h', 'hr', 'hrs', 'hour', 'hours'].includes(unitRaw)) {
+    unit = 'hours';
+  } else {
+    unit = 'days';
+  }
+
+  return `${amount} ${unit} ago`;
 }
 
 export function buildNrqlQuery(state: QueryState): string {
@@ -79,8 +110,22 @@ export function buildNrqlQuery(state: QueryState): string {
   }
 
   // Build time range
-  const since = formatDateForNrql(state.timePeriod.since);
-  const until = formatDateForNrql(state.timePeriod.until);
+  let sinceClause: string;
+  let untilClause: string;
+
+  if (state.timePeriod.mode === 'relative') {
+    const parsed = parseRelativeTimeInput(state.timePeriod.relative);
+    if (!parsed) {
+      return '-- Enter a valid relative time (e.g., 3h ago)';
+    }
+    sinceClause = `SINCE ${parsed}`;
+    untilClause = 'UNTIL now';
+  } else {
+    const since = formatDateForNrql(state.timePeriod.since);
+    const until = formatDateForNrql(state.timePeriod.until);
+    sinceClause = `SINCE '${since}'`;
+    untilClause = `UNTIL '${until}'`;
+  }
 
   // Assemble full query
   const query = [
@@ -88,8 +133,8 @@ export function buildNrqlQuery(state: QueryState): string {
     `select ${selectClause}`,
     `WHERE ${whereConditions.join(' and ')}`,
     'TIMESERIES 1 MINUTE',
-    `SINCE '${since}'`,
-    `UNTIL '${until}'`,
+    sinceClause,
+    untilClause,
     'FACET request.uri',
   ].join(' ');
 
@@ -126,12 +171,20 @@ export function useQueryBuilder() {
     setState(prev => ({ ...prev, timePeriod }));
   }, []);
 
+  const setTimeMode = useCallback((mode: TimePeriod['mode']) => {
+    setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, mode } }));
+  }, []);
+
   const setSince = useCallback((since: string) => {
     setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, since } }));
   }, []);
 
   const setUntil = useCallback((until: string) => {
     setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, until } }));
+  }, []);
+
+  const setRelative = useCallback((relative: string) => {
+    setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, relative } }));
   }, []);
 
   const setExcludeHealthChecks = useCallback((excludeHealthChecks: boolean) => {
@@ -154,8 +207,10 @@ export function useQueryBuilder() {
     setEnvironment,
     setMetricType,
     setTimePeriod,
+    setTimeMode,
     setSince,
     setUntil,
+    setRelative,
     setExcludeHealthChecks,
     applyPreset,
     reset,

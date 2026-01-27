@@ -18,8 +18,10 @@ function App() {
     toggleApplication,
     setEnvironment,
     setMetricType,
+    setTimeMode,
     setSince,
     setUntil,
+    setRelative,
     setExcludeHealthChecks,
     applyPreset,
   } = useQueryBuilder();
@@ -52,10 +54,14 @@ function App() {
         </XUIColumn>
         <XUIColumn gridColumns={4}>
           <TimePeriodSelector
+            mode={state.timePeriod.mode}
             since={state.timePeriod.since}
             until={state.timePeriod.until}
+            relative={state.timePeriod.relative}
+            onModeChange={setTimeMode}
             onSinceChange={setSince}
             onUntilChange={setUntil}
+            onRelativeChange={setRelative}
           />
         </XUIColumn>
       </XUIRow>

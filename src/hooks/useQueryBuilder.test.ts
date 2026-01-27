@@ -7,8 +7,10 @@ function createTestState(overrides: Partial<QueryState> = {}): QueryState {
     environment: 'prod',
     metricType: 'count-with-average',
     timePeriod: {
+      mode: 'absolute',
       since: '2026-01-28T08:00',
       until: '2026-01-28T09:00',
+      relative: '1h ago',
     },
     excludeHealthChecks: true,
     ...overrides,
@@ -104,8 +106,10 @@ describe('buildNrqlQuery', () => {
     it('formats SINCE clause in NRQL format', () => {
       const state = createTestState({
         timePeriod: {
+          mode: 'absolute',
           since: '2026-01-28T08:00',
           until: '2026-01-28T09:00',
+          relative: '1h ago',
         },
       });
       const result = buildNrqlQuery(state);
@@ -116,8 +120,10 @@ describe('buildNrqlQuery', () => {
     it('formats UNTIL clause in NRQL format', () => {
       const state = createTestState({
         timePeriod: {
+          mode: 'absolute',
           since: '2026-01-28T08:00',
           until: '2026-01-28T09:00',
+          relative: '1h ago',
         },
       });
       const result = buildNrqlQuery(state);
@@ -152,6 +158,35 @@ describe('buildNrqlQuery', () => {
       const state = createTestState({ excludeHealthChecks: true });
       const result = buildNrqlQuery(state);
       expect(result).toMatch(/appName in \([^)]+\) and request\.uri not in/);
+    });
+  });
+
+  describe('relative time periods', () => {
+    it('formats relative SINCE and UNTIL now clauses', () => {
+      const state = createTestState({
+        timePeriod: {
+          mode: 'relative',
+          since: '2026-01-28T08:00',
+          until: '2026-01-28T09:00',
+          relative: '3h ago',
+        },
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('SINCE 3 hours ago');
+      expect(result).toContain('UNTIL now');
+    });
+
+    it('returns a helpful comment for invalid relative input', () => {
+      const state = createTestState({
+        timePeriod: {
+          mode: 'relative',
+          since: '2026-01-28T08:00',
+          until: '2026-01-28T09:00',
+          relative: 'yesterday-ish',
+        },
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toBe('-- Enter a valid relative time (e.g., 3h ago)');
     });
   });
 });

@@ -10,9 +10,13 @@ export type MetricType =
   | 'count'
   | 'count-with-average';
 
+export type TimePeriodMode = 'absolute' | 'relative';
+
 export interface TimePeriod {
+  mode: TimePeriodMode;
   since: string; // ISO datetime string from datetime-local input
   until: string; // ISO datetime string from datetime-local input
+  relative: string; // e.g. "3h ago"
 }
 
 export interface QueryState {
