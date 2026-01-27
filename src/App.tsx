@@ -9,6 +9,7 @@ import {
   HealthCheckToggle,
   CommonQueriesPanel,
   QueryPreview,
+  FacetSelector,
 } from './components';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
     setUntil,
     setRelative,
     setExcludeHealthChecks,
+    setFacet,
     applyPreset,
   } = useQueryBuilder();
 
@@ -71,6 +73,12 @@ function App() {
           <HealthCheckToggle
             isExcluded={state.excludeHealthChecks}
             onChange={setExcludeHealthChecks}
+          />
+        </XUIColumn>
+        <XUIColumn gridColumns={3}>
+          <FacetSelector
+            selectedFacet={state.facet}
+            onChange={setFacet}
           />
         </XUIColumn>
       </XUIRow>

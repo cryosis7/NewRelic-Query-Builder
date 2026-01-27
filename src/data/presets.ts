@@ -33,6 +33,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricType: 'count-with-average',
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
+      facet: 'request.uri',
     },
   },
   {
@@ -45,6 +46,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricType: 'count-with-average',
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
+      facet: 'request.uri',
     },
   },
   {
@@ -57,6 +59,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricType: 'count-with-average',
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
+      facet: 'request.uri',
     },
   },
   {
@@ -69,6 +72,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricType: 'count-with-average',
       timePeriod: getLastNHours(24),
       excludeHealthChecks: true,
+      facet: 'request.uri',
     },
   },
   {
@@ -81,6 +85,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricType: 'count-with-average',
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
+      facet: 'request.uri',
     },
   },
 ];

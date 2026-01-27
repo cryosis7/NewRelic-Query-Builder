@@ -13,6 +13,7 @@ function createTestState(overrides: Partial<QueryState> = {}): QueryState {
       relative: '1h ago',
     },
     excludeHealthChecks: true,
+    facet: 'request.uri',
     ...overrides,
   };
 }
@@ -139,6 +140,7 @@ describe('buildNrqlQuery', () => {
         environment: 'prod',
         metricType: 'count-with-average',
         excludeHealthChecks: true,
+        facet: 'request.uri',
       });
       const result = buildNrqlQuery(state);
 
@@ -160,7 +162,37 @@ describe('buildNrqlQuery', () => {
       expect(result).toMatch(/appName in \([^)]+\) and request\.uri not in/);
     });
   });
+  describe('faceting', () => {
+    it('includes FACET clause when facet is set to request.uri', () => {
+      const state = createTestState({ facet: 'request.uri' });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('FACET request.uri');
+    });
 
+    it('includes FACET clause when facet is set to response.status', () => {
+      const state = createTestState({ facet: 'response.status' });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('FACET response.status');
+    });
+
+    it('includes FACET clause when facet is set to http.method', () => {
+      const state = createTestState({ facet: 'http.method' });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('FACET http.method');
+    });
+
+    it('includes FACET clause when facet is set to name', () => {
+      const state = createTestState({ facet: 'name' });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('FACET name');
+    });
+
+    it('excludes FACET clause when facet is set to none', () => {
+      const state = createTestState({ facet: 'none' });
+      const result = buildNrqlQuery(state);
+      expect(result).not.toContain('FACET');
+    });
+  });
   describe('relative time periods', () => {
     it('formats relative SINCE and UNTIL now clauses', () => {
       const state = createTestState({

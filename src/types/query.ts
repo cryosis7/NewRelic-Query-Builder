@@ -10,6 +10,12 @@ export type MetricType =
   | 'count'
   | 'count-with-average';
 
+export type FacetOption = 
+  | 'none'
+  | 'request.uri'
+  | 'response.status'
+  | 'http.method'
+  | 'name';
 export type TimePeriodMode = 'absolute' | 'relative';
 
 export interface TimePeriod {
@@ -25,6 +31,7 @@ export interface QueryState {
   metricType: MetricType;
   timePeriod: TimePeriod;
   excludeHealthChecks: boolean;
+  facet: FacetOption;
 }
 
 export const APPLICATIONS: { value: Application; label: string }[] = [
@@ -42,6 +49,14 @@ export const METRIC_TYPES: { value: MetricType; label: string }[] = [
   { value: 'average-duration', label: 'Average Duration' },
   { value: 'count', label: 'Total Count' },
   { value: 'count-with-average', label: 'Count & Average Duration' },
+];
+
+export const FACET_OPTIONS: { value: FacetOption; label: string }[] = [
+  { value: 'none', label: 'No Facet' },
+  { value: 'request.uri', label: 'Request URI' },
+  { value: 'response.status', label: 'Response Status' },
+  { value: 'http.method', label: 'HTTP Method' },
+  { value: 'name', label: 'Transaction Name' },
 ];
 
 export const HEALTH_CHECK_PATHS = [

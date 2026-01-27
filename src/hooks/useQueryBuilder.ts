@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { QueryState, Application, Environment, MetricType, TimePeriod } from '../types/query';
+import type { QueryState, Application, Environment, MetricType, TimePeriod, FacetOption } from '../types/query';
 import { HEALTH_CHECK_PATHS } from '../types/query';
 
 function getDefaultTimePeriod(): TimePeriod {
@@ -26,6 +26,7 @@ function getInitialState(): QueryState {
     metricType: 'count-with-average',
     timePeriod: getDefaultTimePeriod(),
     excludeHealthChecks: true,
+    facet: 'request.uri',
   };
 }
 
@@ -128,15 +129,20 @@ export function buildNrqlQuery(state: QueryState): string {
   }
 
   // Assemble full query
-  const query = [
+  const queryParts = [
     'FROM Transaction',
     `select ${selectClause}`,
     `WHERE ${whereConditions.join(' and ')}`,
     'TIMESERIES 1 MINUTE',
     sinceClause,
     untilClause,
-    'FACET request.uri',
-  ].join(' ');
+  ];
+
+  if (state.facet !== 'none') {
+    queryParts.push(`FACET ${state.facet}`);
+  }
+
+  const query = queryParts.join(' ');
 
   return query;
 }
@@ -191,6 +197,10 @@ export function useQueryBuilder() {
     setState(prev => ({ ...prev, excludeHealthChecks }));
   }, []);
 
+  const setFacet = useCallback((facet: FacetOption) => {
+    setState(prev => ({ ...prev, facet }));
+  }, []);
+
   const applyPreset = useCallback((preset: Partial<QueryState>) => {
     setState(prev => ({ ...prev, ...preset }));
   }, []);
@@ -212,6 +222,7 @@ export function useQueryBuilder() {
     setUntil,
     setRelative,
     setExcludeHealthChecks,
+    setFacet,
     applyPreset,
     reset,
   };

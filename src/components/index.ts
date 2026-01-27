@@ -5,3 +5,4 @@ export { TimePeriodSelector } from './TimePeriodSelector';
 export { HealthCheckToggle } from './HealthCheckToggle';
 export { CommonQueriesPanel } from './CommonQueriesPanel';
 export { QueryPreview } from './QueryPreview';
+export { FacetSelector } from './FacetSelector';
