@@ -24,6 +24,7 @@ function createTestState(overrides: Partial<QueryState> = {}): QueryState {
       relative: '1h ago',
     },
     excludeHealthChecks: true,
+    useTimeseries: true,
     facet: 'request.uri',
     ...overrides,
   };
@@ -168,6 +169,20 @@ describe('buildNrqlQuery', () => {
       const state = createTestState({ excludeHealthChecks: false });
       const result = buildNrqlQuery(state);
       expect(result).not.toContain('request.uri not in');
+    });
+  });
+
+  describe('timeseries', () => {
+    it('includes TIMESERIES 1 MINUTE when useTimeseries is true', () => {
+      const state = createTestState({ useTimeseries: true });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('TIMESERIES 1 MINUTE');
+    });
+
+    it('excludes TIMESERIES clause when useTimeseries is false', () => {
+      const state = createTestState({ useTimeseries: false });
+      const result = buildNrqlQuery(state);
+      expect(result).not.toContain('TIMESERIES');
     });
   });
 

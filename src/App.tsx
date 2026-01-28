@@ -26,6 +26,7 @@ function App() {
     setUntil,
     setRelative,
     setExcludeHealthChecks,
+    setUseTimeseries,
     setFacet,
     applyPreset,
   } = useQueryBuilder();
@@ -79,6 +80,8 @@ function App() {
           <HealthCheckToggle
             isExcluded={state.excludeHealthChecks}
             onChange={setExcludeHealthChecks}
+            useTimeseries={state.useTimeseries}
+            onTimeseriesChange={setUseTimeseries}
           />
         </XUIColumn>
         <XUIColumn gridColumns={6}>

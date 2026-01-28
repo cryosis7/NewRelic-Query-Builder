@@ -40,6 +40,7 @@ export interface QueryState {
   metricItems: MetricQueryItem[];
   timePeriod: TimePeriod;
   excludeHealthChecks: boolean;
+  useTimeseries: boolean;
   facet: FacetOption;
 }
 

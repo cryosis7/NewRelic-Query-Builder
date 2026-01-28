@@ -4,9 +4,11 @@ import { HealthCheckToggle } from './HealthCheckToggle';
 
 describe('HealthCheckToggle', () => {
   const mockOnChange = vi.fn();
+  const mockOnTimeseriesChange = vi.fn();
 
   beforeEach(() => {
     mockOnChange.mockClear();
+    mockOnTimeseriesChange.mockClear();
   });
 
   it('renders the exclude health checks checkbox', () => {
@@ -14,6 +16,8 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={true}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
@@ -25,6 +29,8 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={true}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
@@ -36,6 +42,8 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={false}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
@@ -48,6 +56,8 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={true}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
@@ -61,6 +71,8 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={false}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
@@ -73,6 +85,8 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={true}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
@@ -86,6 +100,8 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={false}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
@@ -97,9 +113,80 @@ describe('HealthCheckToggle', () => {
       <HealthCheckToggle
         isExcluded={true}
         onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
       />
     );
 
     expect(screen.getByText('Options')).toBeInTheDocument();
+  });
+
+  it('renders the use timeseries checkbox', () => {
+    render(
+      <HealthCheckToggle
+        isExcluded={true}
+        onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
+      />
+    );
+
+    expect(screen.getByLabelText('Use TIMESERIES')).toBeInTheDocument();
+  });
+
+  it('shows timeseries checkbox as checked when useTimeseries is true', () => {
+    render(
+      <HealthCheckToggle
+        isExcluded={true}
+        onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
+      />
+    );
+
+    expect(screen.getByLabelText('Use TIMESERIES')).toBeChecked();
+  });
+
+  it('shows timeseries checkbox as unchecked when useTimeseries is false', () => {
+    render(
+      <HealthCheckToggle
+        isExcluded={true}
+        onChange={mockOnChange}
+        useTimeseries={false}
+        onTimeseriesChange={mockOnTimeseriesChange}
+      />
+    );
+
+    expect(screen.getByLabelText('Use TIMESERIES')).not.toBeChecked();
+  });
+
+  it('calls onTimeseriesChange with false when checked timeseries box is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <HealthCheckToggle
+        isExcluded={true}
+        onChange={mockOnChange}
+        useTimeseries={true}
+        onTimeseriesChange={mockOnTimeseriesChange}
+      />
+    );
+
+    await user.click(screen.getByLabelText('Use TIMESERIES'));
+    expect(mockOnTimeseriesChange).toHaveBeenCalledWith(false);
+  });
+
+  it('calls onTimeseriesChange with true when unchecked timeseries box is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <HealthCheckToggle
+        isExcluded={true}
+        onChange={mockOnChange}
+        useTimeseries={false}
+        onTimeseriesChange={mockOnTimeseriesChange}
+      />
+    );
+
+    await user.click(screen.getByLabelText('Use TIMESERIES'));
+    expect(mockOnTimeseriesChange).toHaveBeenCalledWith(true);
   });
 });

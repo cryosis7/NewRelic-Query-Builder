@@ -36,6 +36,7 @@ function getInitialState(): QueryState {
     metricItems: [createMetricItem('transaction-count', 'count')],
     timePeriod: getDefaultTimePeriod(),
     excludeHealthChecks: true,
+    useTimeseries: true,
     facet: 'request.uri',
   };
 }
@@ -229,10 +230,14 @@ export function buildNrqlQuery(state: QueryState): string {
     'FROM Transaction',
     `select ${selectClause}`,
     `WHERE ${whereConditions.join(' and ')}`,
-    'TIMESERIES 1 MINUTE',
-    sinceClause,
-    untilClause,
   ];
+
+  if (state.useTimeseries) {
+    queryParts.push('TIMESERIES 1 MINUTE');
+  }
+
+  queryParts.push(sinceClause);
+  queryParts.push(untilClause);
 
   if (state.facet !== 'none') {
     queryParts.push(`FACET ${state.facet}`);
@@ -342,6 +347,10 @@ export function useQueryBuilder() {
     setState(prev => ({ ...prev, excludeHealthChecks }));
   }, []);
 
+  const setUseTimeseries = useCallback((useTimeseries: boolean) => {
+    setState(prev => ({ ...prev, useTimeseries }));
+  }, []);
+
   const setFacet = useCallback((facet: FacetOption) => {
     setState(prev => ({ ...prev, facet }));
   }, []);
@@ -369,6 +378,7 @@ export function useQueryBuilder() {
     setUntil,
     setRelative,
     setExcludeHealthChecks,
+    setUseTimeseries,
     setFacet,
     applyPreset,
     reset,
