@@ -46,6 +46,9 @@ Each component follows this structure:
 
 ## Testing
 
+Every feature must have tests. Any time code is changed, tests must be updated accordingly.
+Run the tests after making changes to ensure everything passes.
+
 ### Commands
 - `npm test` - Watch mode
 - `npm run test:run` - Single run (CI)

@@ -1,4 +1,10 @@
-import XUIRadio, { XUIRadioGroup } from '@xero/xui/react/radio';
+import {
+  XUISingleSelect,
+  XUISingleSelectLabel,
+  XUISingleSelectOption,
+  XUISingleSelectOptions,
+  XUISingleSelectTrigger,
+} from '@xero/xui/react/singleselect';
 import { METRIC_TYPES, type MetricType } from '../types/query';
 
 interface MetricTypeSelectorProps {
@@ -8,18 +14,20 @@ interface MetricTypeSelectorProps {
 
 export function MetricTypeSelector({ selectedMetricType, onChange }: MetricTypeSelectorProps) {
   return (
-    <XUIRadioGroup label="Metric Type" isFieldLayout>
-      {METRIC_TYPES.map(({ value, label }) => (
-        <XUIRadio
-          key={value}
-          name="metricType"
-          value={value}
-          isChecked={selectedMetricType === value}
-          onChange={() => onChange(value)}
-        >
-          {label}
-        </XUIRadio>
-      ))}
-    </XUIRadioGroup>
+    <XUISingleSelect
+      key={`metricType-${selectedMetricType}`}
+      defaultSelectedOptionId={selectedMetricType}
+      onSelect={(value) => onChange(value as MetricType)}
+    >
+      <XUISingleSelectLabel>Metric Type</XUISingleSelectLabel>
+      <XUISingleSelectTrigger />
+      <XUISingleSelectOptions matchTriggerWidth>
+        {METRIC_TYPES.map(({ value, label }) => (
+          <XUISingleSelectOption key={value} id={value}>
+            {label}
+          </XUISingleSelectOption>
+        ))}
+      </XUISingleSelectOptions>
+    </XUISingleSelect>
   );
 }

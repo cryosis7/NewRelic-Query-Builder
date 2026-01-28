@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ApplicationSelector } from './ApplicationSelector';
-import type { Application } from '../types/query';
 
 describe('ApplicationSelector', () => {
   const mockOnToggle = vi.fn();
@@ -18,9 +17,9 @@ describe('ApplicationSelector', () => {
       />
     );
 
-    expect(screen.getByLabelText('Global Tax Mapper API')).toBeInTheDocument();
-    expect(screen.getByLabelText('Global Tax Mapper BFF')).toBeInTheDocument();
-    expect(screen.getByLabelText('Global Tax Mapper Integrator API')).toBeInTheDocument();
+    expect(screen.getByLabelText('API')).toBeInTheDocument();
+    expect(screen.getByLabelText('BFF')).toBeInTheDocument();
+    expect(screen.getByLabelText('Integrator API')).toBeInTheDocument();
   });
 
   it('shows checkboxes as checked when applications are selected', () => {
@@ -31,9 +30,9 @@ describe('ApplicationSelector', () => {
       />
     );
 
-    expect(screen.getByLabelText('Global Tax Mapper API')).toBeChecked();
-    expect(screen.getByLabelText('Global Tax Mapper BFF')).toBeChecked();
-    expect(screen.getByLabelText('Global Tax Mapper Integrator API')).not.toBeChecked();
+    expect(screen.getByLabelText('API')).toBeChecked();
+    expect(screen.getByLabelText('BFF')).toBeChecked();
+    expect(screen.getByLabelText('Integrator API')).not.toBeChecked();
   });
 
   it('calls onToggle with correct application when checkbox is clicked', async () => {
@@ -45,7 +44,7 @@ describe('ApplicationSelector', () => {
       />
     );
 
-    await user.click(screen.getByLabelText('Global Tax Mapper API'));
+    await user.click(screen.getByLabelText('API'));
     expect(mockOnToggle).toHaveBeenCalledWith('global-tax-mapper-api');
   });
 
@@ -58,7 +57,7 @@ describe('ApplicationSelector', () => {
       />
     );
 
-    await user.click(screen.getByLabelText('Global Tax Mapper BFF'));
+    await user.click(screen.getByLabelText('BFF'));
     expect(mockOnToggle).toHaveBeenCalledWith('global-tax-mapper-bff');
   });
 

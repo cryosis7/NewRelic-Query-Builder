@@ -1,6 +1,12 @@
-import XUITextInput from '@xero/xui/react/textinput';
+import XUITextInput, { XUITextInputSideElement } from '@xero/xui/react/textinput';
 import XUIControlGroup from '@xero/xui/react/controlgroup';
-import XUISelectBox, { XUISelectBoxOption } from '@xero/xui/react/selectbox';
+import {
+  XUISingleSelect,
+  XUISingleSelectLabel,
+  XUISingleSelectOption,
+  XUISingleSelectOptions,
+  XUISingleSelectTrigger,
+} from '@xero/xui/react/singleselect';
 import XUIRadio, { XUIRadioGroup } from '@xero/xui/react/radio';
 import type { TimePeriodMode } from '../types/query';
 
@@ -27,6 +33,11 @@ export function TimePeriodSelector({
   onUntilChange,
   onRelativeChange,
 }: TimePeriodSelectorProps) {
+  const selectedRelativeOption = relative || RELATIVE_OPTIONS[0];
+  const relativeOptions = RELATIVE_OPTIONS.includes(selectedRelativeOption)
+    ? RELATIVE_OPTIONS
+    : [selectedRelativeOption, ...RELATIVE_OPTIONS];
+
   return (
     <XUIControlGroup label="Time Period" isFieldLayout>
       <XUIRadioGroup label="Mode" isFieldLayout>
@@ -71,25 +82,6 @@ export function TimePeriodSelector({
         </>
       ) : (
         <>
-          <XUISelectBox
-            label="Quick range"
-            buttonContent={relative || 'Choose a range'}
-          >
-            {RELATIVE_OPTIONS.map((option) => (
-              <XUISelectBoxOption
-                key={option}
-                id={option}
-                value={option}
-                isSelected={option === relative}
-                onSelect={(value) => {
-                  onRelativeChange(String(value));
-                  onModeChange('relative');
-                }}
-              >
-                {option}
-              </XUISelectBoxOption>
-            ))}
-          </XUISelectBox>
           <XUITextInput
             label="Relative"
             type="text"
@@ -98,6 +90,28 @@ export function TimePeriodSelector({
             onChange={(e) => onRelativeChange(e.target.value)}
             inputProps={{ id: 'relative-input' }}
             isFieldLayout
+            rightElement={
+              <XUITextInputSideElement type="button">
+                <XUISingleSelect
+                  key={`relative-${selectedRelativeOption}`}
+                  defaultSelectedOptionId={selectedRelativeOption}
+                  onSelect={(value) => {
+                    onRelativeChange(String(value));
+                    onModeChange('relative');
+                  }}
+                >
+                  <XUISingleSelectLabel>Quick range</XUISingleSelectLabel>
+                  <XUISingleSelectTrigger />
+                  <XUISingleSelectOptions>
+                    {relativeOptions.map((option) => (
+                      <XUISingleSelectOption key={option} id={option}>
+                        {option}
+                      </XUISingleSelectOption>
+                    ))}
+                  </XUISingleSelectOptions>
+                </XUISingleSelect>
+              </XUITextInputSideElement>
+            }
           />
         </>
       )}

@@ -5,7 +5,18 @@ function createTestState(overrides: Partial<QueryState> = {}): QueryState {
   return {
     applications: ['global-tax-mapper-api'],
     environment: 'prod',
-    metricType: 'count-with-average',
+    metricItems: [
+      {
+        id: 'metric-1',
+        metricType: 'transaction-count',
+        aggregationType: 'count',
+        filter: {
+          isEnabled: false,
+          operator: '>',
+          value: '',
+        },
+      },
+    ],
     timePeriod: {
       mode: 'absolute',
       since: '2026-01-28T08:00',
@@ -66,24 +77,81 @@ describe('buildNrqlQuery', () => {
   });
 
   describe('metric types', () => {
-    it('generates select average(duration) for average-duration metric type', () => {
-      const state = createTestState({ metricType: 'average-duration' });
+    it('generates select average(duration) for duration metric with average aggregation', () => {
+      const state = createTestState({
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'duration',
+            aggregationType: 'average',
+            filter: { isEnabled: false, operator: '>', value: '' },
+          },
+        ],
+      });
       const result = buildNrqlQuery(state);
       expect(result).toContain('select average(duration)');
       expect(result).not.toContain('count(*)');
     });
 
-    it('generates select count(*) for count metric type', () => {
-      const state = createTestState({ metricType: 'count' });
+    it('generates select count(*) for transaction-count metric type', () => {
+      const state = createTestState({
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'transaction-count',
+            aggregationType: 'count',
+            filter: { isEnabled: false, operator: '>', value: '' },
+          },
+        ],
+      });
       const result = buildNrqlQuery(state);
       expect(result).toContain('select count(*)');
       expect(result).not.toContain('average(duration)');
     });
 
-    it('generates select average(duration), count(*) for count-with-average metric type', () => {
-      const state = createTestState({ metricType: 'count-with-average' });
+    it('generates select percentile(duration, 95) for duration metric with p95 aggregation', () => {
+      const state = createTestState({
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'duration',
+            aggregationType: 'p95',
+            filter: { isEnabled: false, operator: '>', value: '' },
+          },
+        ],
+      });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select average(duration), count(*)');
+      expect(result).toContain('select percentile(duration, 95)');
+    });
+
+    it('generates select count(duration) for duration metric with count aggregation', () => {
+      const state = createTestState({
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'duration',
+            aggregationType: 'count',
+            filter: { isEnabled: false, operator: '>', value: '' },
+          },
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('select count(duration)');
+    });
+
+    it('adds a status class filter for status metrics', () => {
+      const state = createTestState({
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'status-4xx',
+            aggregationType: 'count',
+            filter: { isEnabled: false, operator: '>', value: '' },
+          },
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain("response.status LIKE '4%'");
     });
   });
 
@@ -138,7 +206,14 @@ describe('buildNrqlQuery', () => {
       const state = createTestState({
         applications: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
         environment: 'prod',
-        metricType: 'count-with-average',
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'transaction-count',
+            aggregationType: 'count',
+            filter: { isEnabled: false, operator: '>', value: '' },
+          },
+        ],
         excludeHealthChecks: true,
         facet: 'request.uri',
       });
@@ -146,7 +221,7 @@ describe('buildNrqlQuery', () => {
 
       // Verify all parts are present
       expect(result).toContain('FROM Transaction');
-      expect(result).toContain('select average(duration), count(*)');
+      expect(result).toContain('select count(*)');
       expect(result).toContain('WHERE');
       expect(result).toContain('appName in (');
       expect(result).toContain('request.uri not in (');
@@ -219,6 +294,48 @@ describe('buildNrqlQuery', () => {
       });
       const result = buildNrqlQuery(state);
       expect(result).toBe('-- Enter a valid relative time (e.g., 3h ago)');
+    });
+  });
+
+  describe('metric filters', () => {
+    it('uses global WHERE when only one metric has a filter', () => {
+      const state = createTestState({
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'duration',
+            aggregationType: 'count',
+            filter: { isEnabled: true, operator: '>', value: '0.5' },
+          },
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('select count(duration)');
+      expect(result).toContain('WHERE');
+      expect(result).toContain('duration > 0.5');
+      expect(result).not.toContain('filter(count(duration)');
+    });
+
+    it('uses filter() when a metric filter would conflict with another metric', () => {
+      const state = createTestState({
+        metricItems: [
+          {
+            id: 'metric-1',
+            metricType: 'duration',
+            aggregationType: 'count',
+            filter: { isEnabled: true, operator: '>', value: '0.5' },
+          },
+          {
+            id: 'metric-2',
+            metricType: 'duration',
+            aggregationType: 'average',
+            filter: { isEnabled: false, operator: '>', value: '' },
+          },
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('select filter(count(duration), where duration > 0.5), average(duration)');
+      expect(result).not.toContain('WHERE duration > 0.5');
     });
   });
 });

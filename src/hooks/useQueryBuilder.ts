@@ -1,5 +1,15 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { QueryState, Application, Environment, MetricType, TimePeriod, FacetOption } from '../types/query';
+import type {
+  QueryState,
+  Application,
+  Environment,
+  MetricType,
+  AggregationType,
+  TimePeriod,
+  FacetOption,
+  MetricQueryItem,
+  MetricFilter,
+} from '../types/query';
 import { HEALTH_CHECK_PATHS } from '../types/query';
 
 function getDefaultTimePeriod(): TimePeriod {
@@ -21,13 +31,66 @@ function getDefaultTimePeriod(): TimePeriod {
 
 function getInitialState(): QueryState {
   return {
-    applications: [],
+    applications: ['global-tax-mapper-api'],
     environment: 'prod',
-    metricType: 'count-with-average',
+    metricItems: [createMetricItem('transaction-count', 'count')],
     timePeriod: getDefaultTimePeriod(),
     excludeHealthChecks: true,
     facet: 'request.uri',
   };
+}
+
+function isDurationMetric(metricType: MetricType): boolean {
+  return metricType === 'duration';
+}
+
+function createMetricFilter(): MetricFilter {
+  return {
+    isEnabled: false,
+    operator: '>',
+    value: '',
+  };
+}
+
+function createMetricItem(metricType: MetricType, aggregationType: AggregationType): MetricQueryItem {
+  return {
+    id: generateMetricItemId(),
+    metricType,
+    aggregationType: normalizeAggregationForMetric(metricType, aggregationType),
+    filter: createMetricFilter(),
+  };
+}
+
+function generateMetricItemId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `metric-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeAggregationForMetric(metricType: MetricType, aggregationType: AggregationType): AggregationType {
+  return isDurationMetric(metricType) ? aggregationType : 'count';
+}
+
+function getStatusClassFilter(metricType: MetricType): string | null {
+  switch (metricType) {
+    case 'status-2xx':
+      return "response.status LIKE '2%'";
+    case 'status-4xx':
+      return "response.status LIKE '4%'";
+    case 'status-5xx':
+      return "response.status LIKE '5%'";
+    default:
+      return null;
+  }
+}
+
+function getMetricFilterField(metricType: MetricType): string {
+  if (metricType === 'status-2xx' || metricType === 'status-4xx' || metricType === 'status-5xx') {
+    return 'response.status';
+  }
+
+  return 'duration';
 }
 
 function formatDateForNrql(isoString: string): string {
@@ -83,19 +146,48 @@ export function buildNrqlQuery(state: QueryState): string {
     return '-- Select at least one application';
   }
 
-  // Build SELECT clause based on metric type
-  let selectClause: string;
-  switch (state.metricType) {
-    case 'average-duration':
-      selectClause = 'average(duration)';
-      break;
-    case 'count':
-      selectClause = 'count(*)';
-      break;
-    case 'count-with-average':
-      selectClause = 'average(duration), count(*)';
-      break;
+  if (state.metricItems.length === 0) {
+    return '-- Select at least one metric';
   }
+
+  const itemFilters = state.metricItems.map((item) => {
+    const conditions: string[] = [];
+
+    const statusFilter = getStatusClassFilter(item.metricType);
+    if (statusFilter) {
+      conditions.push(statusFilter);
+    }
+
+    if (item.filter.isEnabled && item.filter.value.trim()) {
+      const field = getMetricFilterField(item.metricType);
+      conditions.push(`${field} ${item.filter.operator} ${item.filter.value.trim()}`);
+    }
+
+    return conditions;
+  });
+
+  const conditionKey = (conditions: string[]) => conditions.slice().sort().join(' && ');
+  const conditionKeys = itemFilters.map(conditionKey);
+  const uniqueConditionKeys = new Set(conditionKeys);
+  const canLiftItemFilters = uniqueConditionKeys.size === 1;
+  const sharedItemFilters = canLiftItemFilters ? itemFilters[0] : [];
+
+  const selectItems = state.metricItems.map((item, index) => {
+    const conditions = itemFilters[index];
+    const baseSelect = buildMetricSelect(item);
+
+    if (canLiftItemFilters && sharedItemFilters.length > 0) {
+      return baseSelect;
+    }
+
+    if (conditions.length > 0) {
+      return `filter(${baseSelect}, where ${conditions.join(' and ')})`;
+    }
+
+    return baseSelect;
+  });
+
+  const selectClause = selectItems.join(', ');
 
   // Build app names with environment suffix
   const appNames = state.applications
@@ -108,6 +200,10 @@ export function buildNrqlQuery(state: QueryState): string {
   if (state.excludeHealthChecks) {
     const paths = HEALTH_CHECK_PATHS.map(p => `'${p}'`).join(', ');
     whereConditions.push(`request.uri not in (${paths})`);
+  }
+
+  if (canLiftItemFilters && sharedItemFilters.length > 0) {
+    whereConditions.push(...sharedItemFilters);
   }
 
   // Build time range
@@ -147,6 +243,21 @@ export function buildNrqlQuery(state: QueryState): string {
   return query;
 }
 
+function buildMetricSelect(item: MetricQueryItem): string {
+  if (isDurationMetric(item.metricType)) {
+    switch (item.aggregationType) {
+      case 'average':
+        return 'average(duration)';
+      case 'p95':
+        return 'percentile(duration, 95)';
+      case 'count':
+        return 'count(duration)';
+    }
+  }
+
+  return 'count(*)';
+}
+
 export function useQueryBuilder() {
   const [state, setState] = useState<QueryState>(getInitialState);
 
@@ -169,8 +280,42 @@ export function useQueryBuilder() {
     setState(prev => ({ ...prev, environment }));
   }, []);
 
-  const setMetricType = useCallback((metricType: MetricType) => {
-    setState(prev => ({ ...prev, metricType }));
+  const addMetricItem = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      metricItems: [...prev.metricItems, createMetricItem('transaction-count', 'count')],
+    }));
+  }, []);
+
+  const updateMetricItem = useCallback((id: string, updates: Partial<MetricQueryItem>) => {
+    setState(prev => ({
+      ...prev,
+      metricItems: prev.metricItems.map(item => {
+        if (item.id !== id) {
+          return item;
+        }
+
+        const updatedMetricType = updates.metricType ?? item.metricType;
+        const updatedAggregationType = normalizeAggregationForMetric(
+          updatedMetricType,
+          updates.aggregationType ?? item.aggregationType
+        );
+
+        return {
+          ...item,
+          ...updates,
+          metricType: updatedMetricType,
+          aggregationType: updatedAggregationType,
+        };
+      }),
+    }));
+  }, []);
+
+  const removeMetricItem = useCallback((id: string) => {
+    setState(prev => ({
+      ...prev,
+      metricItems: prev.metricItems.filter(item => item.id !== id),
+    }));
   }, []);
 
   const setTimePeriod = useCallback((timePeriod: TimePeriod) => {
@@ -215,7 +360,9 @@ export function useQueryBuilder() {
     setApplications,
     toggleApplication,
     setEnvironment,
-    setMetricType,
+    addMetricItem,
+    updateMetricItem,
+    removeMetricItem,
     setTimePeriod,
     setTimeMode,
     setSince,

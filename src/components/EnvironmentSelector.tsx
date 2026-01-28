@@ -1,4 +1,10 @@
-import XUIRadio, { XUIRadioGroup } from '@xero/xui/react/radio';
+import {
+  XUISingleSelect,
+  XUISingleSelectLabel,
+  XUISingleSelectOption,
+  XUISingleSelectOptions,
+  XUISingleSelectTrigger,
+} from '@xero/xui/react/singleselect';
 import { ENVIRONMENTS, type Environment } from '../types/query';
 
 interface EnvironmentSelectorProps {
@@ -8,18 +14,20 @@ interface EnvironmentSelectorProps {
 
 export function EnvironmentSelector({ selectedEnvironment, onChange }: EnvironmentSelectorProps) {
   return (
-    <XUIRadioGroup label="Environment" isFieldLayout>
-      {ENVIRONMENTS.map(({ value, label }) => (
-        <XUIRadio
-          key={value}
-          name="environment"
-          value={value}
-          isChecked={selectedEnvironment === value}
-          onChange={() => onChange(value)}
-        >
-          {label}
-        </XUIRadio>
-      ))}
-    </XUIRadioGroup>
+    <XUISingleSelect
+      key={`environment-${selectedEnvironment}`}
+      defaultSelectedOptionId={selectedEnvironment}
+      onSelect={(value) => onChange(value as Environment)}
+    >
+      <XUISingleSelectLabel>Environment</XUISingleSelectLabel>
+      <XUISingleSelectTrigger />
+      <XUISingleSelectOptions matchTriggerWidth>
+        {ENVIRONMENTS.map(({ value, label }) => (
+          <XUISingleSelectOption key={value} id={value}>
+            {label}
+          </XUISingleSelectOption>
+        ))}
+      </XUISingleSelectOptions>
+    </XUISingleSelect>
   );
 }

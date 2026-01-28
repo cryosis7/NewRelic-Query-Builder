@@ -6,9 +6,18 @@ export type Application =
 export type Environment = 'prod' | 'uat';
 
 export type MetricType = 
-  | 'average-duration'
+  | 'duration'
+  | 'transaction-count'
+  | 'status-2xx'
+  | 'status-4xx'
+  | 'status-5xx';
+
+export type AggregationType =
   | 'count'
-  | 'count-with-average';
+  | 'average'
+  | 'p95';
+
+export type MetricFilterOperator = '>' | '>=' | '<' | '<=' | '=';
 
 export type FacetOption = 
   | 'none'
@@ -28,16 +37,29 @@ export interface TimePeriod {
 export interface QueryState {
   applications: Application[];
   environment: Environment;
-  metricType: MetricType;
+  metricItems: MetricQueryItem[];
   timePeriod: TimePeriod;
   excludeHealthChecks: boolean;
   facet: FacetOption;
 }
 
+export interface MetricFilter {
+  isEnabled: boolean;
+  operator: MetricFilterOperator;
+  value: string;
+}
+
+export interface MetricQueryItem {
+  id: string;
+  metricType: MetricType;
+  aggregationType: AggregationType;
+  filter: MetricFilter;
+}
+
 export const APPLICATIONS: { value: Application; label: string }[] = [
-  { value: 'global-tax-mapper-api', label: 'Global Tax Mapper API' },
-  { value: 'global-tax-mapper-bff', label: 'Global Tax Mapper BFF' },
-  { value: 'global-tax-mapper-integrator-api', label: 'Global Tax Mapper Integrator API' },
+  { value: 'global-tax-mapper-api', label: 'API' },
+  { value: 'global-tax-mapper-bff', label: 'BFF' },
+  { value: 'global-tax-mapper-integrator-api', label: 'Integrator API' },
 ];
 
 export const ENVIRONMENTS: { value: Environment; label: string }[] = [
@@ -46,9 +68,25 @@ export const ENVIRONMENTS: { value: Environment; label: string }[] = [
 ];
 
 export const METRIC_TYPES: { value: MetricType; label: string }[] = [
-  { value: 'average-duration', label: 'Average Duration' },
-  { value: 'count', label: 'Total Count' },
-  { value: 'count-with-average', label: 'Count & Average Duration' },
+  { value: 'duration', label: 'Duration' },
+  { value: 'transaction-count', label: 'Transaction' },
+  { value: 'status-2xx', label: '2XX Count' },
+  { value: 'status-4xx', label: '4XX Count' },
+  { value: 'status-5xx', label: '5XX Count' },
+];
+
+export const AGGREGATION_TYPES: { value: AggregationType; label: string }[] = [
+  { value: 'count', label: 'Count' },
+  { value: 'average', label: 'Average' },
+  { value: 'p95', label: '95th Percentile' },
+];
+
+export const METRIC_FILTER_OPERATORS: { value: MetricFilterOperator; label: string }[] = [
+  { value: '>', label: '>' },
+  { value: '>=', label: '>=' },
+  { value: '<', label: '<' },
+  { value: '<=', label: '<=' },
+  { value: '=', label: '=' },
 ];
 
 export const FACET_OPTIONS: { value: FacetOption; label: string }[] = [

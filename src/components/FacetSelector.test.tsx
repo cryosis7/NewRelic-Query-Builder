@@ -7,19 +7,11 @@ describe('FacetSelector', () => {
     const onChange = vi.fn();
     render(<FacetSelector selectedFacet="request.uri" onChange={onChange} />);
 
-    expect(screen.getByLabelText('No Facet')).toBeInTheDocument();
-    expect(screen.getByLabelText('Request URI')).toBeInTheDocument();
-    expect(screen.getByLabelText('Response Status')).toBeInTheDocument();
-    expect(screen.getByLabelText('HTTP Method')).toBeInTheDocument();
-    expect(screen.getByLabelText('Transaction Name')).toBeInTheDocument();
-  });
-
-  it('checks the selected facet option', () => {
-    const onChange = vi.fn();
-    render(<FacetSelector selectedFacet="response.status" onChange={onChange} />);
-
-    expect(screen.getByLabelText('Response Status')).toBeChecked();
-    expect(screen.getByLabelText('Request URI')).not.toBeChecked();
+    expect(screen.getByText('No Facet')).toBeInTheDocument();
+    expect(screen.getByText('Request URI')).toBeInTheDocument();
+    expect(screen.getByText('Response Status')).toBeInTheDocument();
+    expect(screen.getByText('HTTP Method')).toBeInTheDocument();
+    expect(screen.getByText('Transaction Name')).toBeInTheDocument();
   });
 
   it('calls onChange when a facet option is clicked', async () => {
@@ -27,7 +19,7 @@ describe('FacetSelector', () => {
     const onChange = vi.fn();
     render(<FacetSelector selectedFacet="request.uri" onChange={onChange} />);
 
-    await user.click(screen.getByLabelText('HTTP Method'));
+    await user.click(screen.getByText('HTTP Method'));
 
     expect(onChange).toHaveBeenCalledWith('http.method');
   });
@@ -37,7 +29,7 @@ describe('FacetSelector', () => {
     const onChange = vi.fn();
     render(<FacetSelector selectedFacet="request.uri" onChange={onChange} />);
 
-    await user.click(screen.getByLabelText('No Facet'));
+    await user.click(screen.getByText('No Facet'));
 
     expect(onChange).toHaveBeenCalledWith('none');
   });

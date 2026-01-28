@@ -1,4 +1,10 @@
-import XUIRadio, { XUIRadioGroup } from '@xero/xui/react/radio';
+import {
+  XUISingleSelect,
+  XUISingleSelectLabel,
+  XUISingleSelectOption,
+  XUISingleSelectOptions,
+  XUISingleSelectTrigger,
+} from '@xero/xui/react/singleselect';
 import { FACET_OPTIONS, type FacetOption } from '../types/query';
 
 interface FacetSelectorProps {
@@ -8,18 +14,20 @@ interface FacetSelectorProps {
 
 export function FacetSelector({ selectedFacet, onChange }: FacetSelectorProps) {
   return (
-    <XUIRadioGroup label="Facet By" isFieldLayout>
-      {FACET_OPTIONS.map(({ value, label }) => (
-        <XUIRadio
-          key={value}
-          name="facet"
-          value={value}
-          isChecked={selectedFacet === value}
-          onChange={() => onChange(value)}
-        >
-          {label}
-        </XUIRadio>
-      ))}
-    </XUIRadioGroup>
+    <XUISingleSelect
+      key={`facet-${selectedFacet}`}
+      defaultSelectedOptionId={selectedFacet}
+      onSelect={(value) => onChange(value as FacetOption)}
+    >
+      <XUISingleSelectLabel>Facet By</XUISingleSelectLabel>
+      <XUISingleSelectTrigger />
+      <XUISingleSelectOptions matchTriggerWidth>
+        {FACET_OPTIONS.map(({ value, label }) => (
+          <XUISingleSelectOption key={value} id={value}>
+            {label}
+          </XUISingleSelectOption>
+        ))}
+      </XUISingleSelectOptions>
+    </XUISingleSelect>
   );
 }

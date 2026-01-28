@@ -26,11 +26,22 @@ export const QUERY_PRESETS: QueryPreset[] = [
   {
     id: 'api-prod-1h',
     name: 'API Prod - Last Hour',
-    description: 'Global Tax Mapper API production metrics for the last hour',
+    description: 'API production metrics for the last hour',
     state: {
       applications: ['global-tax-mapper-api'],
       environment: 'prod',
-      metricType: 'count-with-average',
+      metricItems: [
+        {
+          id: 'preset-api-prod-1h',
+          metricType: 'transaction-count',
+          aggregationType: 'count',
+          filter: {
+            isEnabled: false,
+            operator: '>',
+            value: '',
+          },
+        },
+      ],
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
       facet: 'request.uri',
@@ -43,7 +54,18 @@ export const QUERY_PRESETS: QueryPreset[] = [
     state: {
       applications: ['global-tax-mapper-api', 'global-tax-mapper-bff', 'global-tax-mapper-integrator-api'],
       environment: 'prod',
-      metricType: 'count-with-average',
+      metricItems: [
+        {
+          id: 'preset-all-apps-prod-1h',
+          metricType: 'transaction-count',
+          aggregationType: 'count',
+          filter: {
+            isEnabled: false,
+            operator: '>',
+            value: '',
+          },
+        },
+      ],
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
       facet: 'request.uri',
@@ -52,11 +74,22 @@ export const QUERY_PRESETS: QueryPreset[] = [
   {
     id: 'api-uat-1h',
     name: 'API UAT - Last Hour',
-    description: 'Global Tax Mapper API UAT metrics for the last hour',
+    description: 'API UAT metrics for the last hour',
     state: {
       applications: ['global-tax-mapper-api'],
       environment: 'uat',
-      metricType: 'count-with-average',
+      metricItems: [
+        {
+          id: 'preset-api-uat-1h',
+          metricType: 'transaction-count',
+          aggregationType: 'count',
+          filter: {
+            isEnabled: false,
+            operator: '>',
+            value: '',
+          },
+        },
+      ],
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
       facet: 'request.uri',
@@ -65,11 +98,22 @@ export const QUERY_PRESETS: QueryPreset[] = [
   {
     id: 'bff-prod-24h',
     name: 'BFF Prod - Last 24 Hours',
-    description: 'Global Tax Mapper BFF production metrics for the last 24 hours',
+    description: 'BFF production metrics for the last 24 hours',
     state: {
       applications: ['global-tax-mapper-bff'],
       environment: 'prod',
-      metricType: 'count-with-average',
+      metricItems: [
+        {
+          id: 'preset-bff-prod-24h',
+          metricType: 'transaction-count',
+          aggregationType: 'count',
+          filter: {
+            isEnabled: false,
+            operator: '>',
+            value: '',
+          },
+        },
+      ],
       timePeriod: getLastNHours(24),
       excludeHealthChecks: true,
       facet: 'request.uri',
@@ -78,11 +122,22 @@ export const QUERY_PRESETS: QueryPreset[] = [
   {
     id: 'integrator-prod-1h',
     name: 'Integrator Prod - Last Hour',
-    description: 'Global Tax Mapper Integrator API production metrics for the last hour',
+    description: 'Integrator API production metrics for the last hour',
     state: {
       applications: ['global-tax-mapper-integrator-api'],
       environment: 'prod',
-      metricType: 'count-with-average',
+      metricItems: [
+        {
+          id: 'preset-integrator-prod-1h',
+          metricType: 'transaction-count',
+          aggregationType: 'count',
+          filter: {
+            isEnabled: false,
+            operator: '>',
+            value: '',
+          },
+        },
+      ],
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
       facet: 'request.uri',

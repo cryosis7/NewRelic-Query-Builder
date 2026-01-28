@@ -44,6 +44,7 @@ describe('CommonQueriesPanel', () => {
     expect(calledWith.applications).toEqual(['global-tax-mapper-api']);
     expect(calledWith.environment).toBe('prod');
     expect(calledWith.excludeHealthChecks).toBe(true);
+    expect(calledWith.metricItems?.[0]?.metricType).toBe('transaction-count');
   });
 
   it('calls onSelectPreset with all apps when All Apps button is clicked', async () => {
