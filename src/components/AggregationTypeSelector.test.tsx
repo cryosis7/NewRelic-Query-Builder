@@ -9,7 +9,8 @@ describe('AggregationTypeSelector', () => {
     mockOnChange.mockClear();
   });
 
-  it('renders all aggregation options', () => {
+  it('renders all aggregation options', async () => {
+    const user = userEvent.setup();
     render(
       <AggregationTypeSelector
         metricType="duration"
@@ -18,9 +19,12 @@ describe('AggregationTypeSelector', () => {
       />
     );
 
-    expect(screen.getByText('Count')).toBeInTheDocument();
-    expect(screen.getByText('Average')).toBeInTheDocument();
-    expect(screen.getByText('95th Percentile')).toBeInTheDocument();
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+
+    expect(screen.getByRole('option', { name: 'Count' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Average' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '95th Percentile' })).toBeInTheDocument();
   });
 
   it('shows only Count for non-duration metrics', () => {
@@ -47,7 +51,9 @@ describe('AggregationTypeSelector', () => {
       />
     );
 
-    await user.click(screen.getByText('95th Percentile'));
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: '95th Percentile' }));
     expect(mockOnChange).toHaveBeenCalledWith('p95');
   });
 

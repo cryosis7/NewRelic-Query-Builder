@@ -9,7 +9,8 @@ describe('EnvironmentSelector', () => {
     mockOnChange.mockClear();
   });
 
-  it('renders Production and UAT options', () => {
+  it('renders Production and UAT options', async () => {
+    const user = userEvent.setup();
     render(
       <EnvironmentSelector
         selectedEnvironment="prod"
@@ -17,8 +18,11 @@ describe('EnvironmentSelector', () => {
       />
     );
 
-    expect(screen.getByText('Production')).toBeInTheDocument();
-    expect(screen.getByText('UAT')).toBeInTheDocument();
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+
+    expect(screen.getByRole('option', { name: 'Production' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'UAT' })).toBeInTheDocument();
   });
 
   it('calls onChange with prod when Production is clicked', async () => {
@@ -30,7 +34,9 @@ describe('EnvironmentSelector', () => {
       />
     );
 
-    await user.click(screen.getByText('Production'));
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Production' }));
     expect(mockOnChange).toHaveBeenCalledWith('prod');
   });
 
@@ -43,7 +49,9 @@ describe('EnvironmentSelector', () => {
       />
     );
 
-    await user.click(screen.getByText('UAT'));
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'UAT' }));
     expect(mockOnChange).toHaveBeenCalledWith('uat');
   });
 

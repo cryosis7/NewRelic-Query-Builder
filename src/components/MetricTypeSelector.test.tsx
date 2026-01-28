@@ -9,7 +9,8 @@ describe('MetricTypeSelector', () => {
     mockOnChange.mockClear();
   });
 
-  it('renders all metric type options', () => {
+  it('renders all metric type options', async () => {
+    const user = userEvent.setup();
     render(
       <MetricTypeSelector
         selectedMetricType="transaction-count"
@@ -17,11 +18,14 @@ describe('MetricTypeSelector', () => {
       />
     );
 
-    expect(screen.getByText('Duration')).toBeInTheDocument();
-    expect(screen.getByText('Transaction')).toBeInTheDocument();
-    expect(screen.getByText('2XX Count')).toBeInTheDocument();
-    expect(screen.getByText('4XX Count')).toBeInTheDocument();
-    expect(screen.getByText('5XX Count')).toBeInTheDocument();
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+
+    expect(screen.getByRole('option', { name: 'Duration' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Transaction' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '2XX Count' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '4XX Count' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: '5XX Count' })).toBeInTheDocument();
   });
 
   it('calls onChange with duration when that option is clicked', async () => {
@@ -33,7 +37,9 @@ describe('MetricTypeSelector', () => {
       />
     );
 
-    await user.click(screen.getByText('Duration'));
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Duration' }));
     expect(mockOnChange).toHaveBeenCalledWith('duration');
   });
 
@@ -46,7 +52,9 @@ describe('MetricTypeSelector', () => {
       />
     );
 
-    await user.click(screen.getByText('Transaction'));
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Transaction' }));
     expect(mockOnChange).toHaveBeenCalledWith('transaction-count');
   });
 
@@ -59,7 +67,9 @@ describe('MetricTypeSelector', () => {
       />
     );
 
-    await user.click(screen.getByText('4XX Count'));
+    // Open the dropdown first
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: '4XX Count' }));
     expect(mockOnChange).toHaveBeenCalledWith('status-4xx');
   });
 
