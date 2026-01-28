@@ -2,7 +2,6 @@ import XUITextInput, { XUITextInputSideElement } from '@xero/xui/react/textinput
 import XUIControlGroup from '@xero/xui/react/controlgroup';
 import {
   XUISingleSelect,
-  XUISingleSelectLabel,
   XUISingleSelectOption,
   XUISingleSelectOptions,
   XUISingleSelectTrigger,
@@ -39,7 +38,7 @@ export function TimePeriodSelector({
     : [selectedRelativeOption, ...RELATIVE_OPTIONS];
 
   return (
-    <XUIControlGroup label="Time Period" isFieldLayout>
+    <XUIControlGroup label="Time Period" isLockedVertical>
       <XUIRadioGroup label="Mode" isFieldLayout>
         <XUIRadio
           name="timePeriodMode"
@@ -68,7 +67,6 @@ export function TimePeriodSelector({
             value={since}
             onChange={(e) => onSinceChange(e.target.value)}
             inputProps={{ id: 'since-input' }}
-            isFieldLayout
           />
           <XUITextInput
             label="Until"
@@ -77,7 +75,6 @@ export function TimePeriodSelector({
             value={until}
             onChange={(e) => onUntilChange(e.target.value)}
             inputProps={{ id: 'until-input' }}
-            isFieldLayout
           />
         </>
       ) : (
@@ -100,7 +97,6 @@ export function TimePeriodSelector({
                     onModeChange('relative');
                   }}
                 >
-                  <XUISingleSelectLabel>Quick range</XUISingleSelectLabel>
                   <XUISingleSelectTrigger />
                   <XUISingleSelectOptions>
                     {relativeOptions.map((option) => (
