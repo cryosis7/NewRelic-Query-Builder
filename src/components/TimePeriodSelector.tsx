@@ -8,6 +8,7 @@ import {
 } from '@xero/xui/react/singleselect';
 import XUIRadio, { XUIRadioGroup } from '@xero/xui/react/radio';
 import type { TimePeriodMode } from '../types/query';
+import { DateTimeInput } from './DateTimeInput';
 
 interface TimePeriodSelectorProps {
   mode: TimePeriodMode;
@@ -60,21 +61,17 @@ export function TimePeriodSelector({
 
       {mode === 'absolute' ? (
         <>
-          <XUITextInput
+          <DateTimeInput
             label="Since"
-            type="text"
-            placeholder="YYYY-MM-DDTHH:mm"
             value={since}
-            onChange={(e) => onSinceChange(e.target.value)}
-            inputProps={{ id: 'since-input' }}
+            onChange={onSinceChange}
+            id="since-input"
           />
-          <XUITextInput
+          <DateTimeInput
             label="Until"
-            type="text"
-            placeholder="YYYY-MM-DDTHH:mm"
             value={until}
-            onChange={(e) => onUntilChange(e.target.value)}
-            inputProps={{ id: 'until-input' }}
+            onChange={onUntilChange}
+            id="until-input"
           />
         </>
       ) : (

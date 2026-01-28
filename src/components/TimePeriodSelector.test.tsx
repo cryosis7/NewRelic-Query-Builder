@@ -24,47 +24,53 @@ describe('TimePeriodSelector', () => {
     mockOnRelativeChange.mockClear();
   });
 
-  it('renders Since and Until input fields', () => {
+  it('renders Since and Until labels', () => {
     render(
       <TimePeriodSelector {...defaultProps} />
     );
 
-    expect(screen.getByLabelText('Since')).toBeInTheDocument();
-    expect(screen.getByLabelText('Until')).toBeInTheDocument();
+    expect(screen.getByText('Since')).toBeInTheDocument();
+    expect(screen.getByText('Until')).toBeInTheDocument();
   });
 
-  it('displays the provided since value', () => {
+  it('displays the provided since time values', () => {
     render(
       <TimePeriodSelector {...defaultProps} />
     );
 
-    expect(screen.getByLabelText('Since')).toHaveValue('2026-01-28T08:00');
+    const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
+    expect(timeInputs[0]).toHaveValue('08:00');
   });
 
-  it('displays the provided until value', () => {
+  it('displays the provided until time values', () => {
     render(
       <TimePeriodSelector {...defaultProps} />
     );
 
-    expect(screen.getByLabelText('Until')).toHaveValue('2026-01-28T09:00');
+    const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
+    expect(timeInputs[1]).toHaveValue('09:00');
   });
 
-  it('calls onSinceChange when since input value changes', () => {
+  it('calls onSinceChange when since time is changed', () => {
     render(
       <TimePeriodSelector {...defaultProps} />
     );
 
-    fireEvent.change(screen.getByLabelText('Since'), { target: { value: '2026-01-28T10:00' } });
-    expect(mockOnSinceChange).toHaveBeenCalledWith('2026-01-28T10:00');
+    const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
+    fireEvent.change(timeInputs[0], { target: { value: '10:00' } });
+
+    expect(mockOnSinceChange).toHaveBeenLastCalledWith('2026-01-28T10:00');
   });
 
-  it('calls onUntilChange when until input value changes', () => {
+  it('calls onUntilChange when until time is changed', () => {
     render(
       <TimePeriodSelector {...defaultProps} />
     );
 
-    fireEvent.change(screen.getByLabelText('Until'), { target: { value: '2026-01-28T12:00' } });
-    expect(mockOnUntilChange).toHaveBeenCalledWith('2026-01-28T12:00');
+    const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
+    fireEvent.change(timeInputs[1], { target: { value: '12:00' } });
+
+    expect(mockOnUntilChange).toHaveBeenLastCalledWith('2026-01-28T12:00');
   });
 
   it('renders the Time Period legend', () => {
@@ -75,13 +81,13 @@ describe('TimePeriodSelector', () => {
     expect(screen.getByText('Time Period')).toBeInTheDocument();
   });
 
-  it('uses text input type', () => {
+  it('renders time pickers for absolute mode', () => {
     render(
       <TimePeriodSelector {...defaultProps} />
     );
 
-    expect(screen.getByLabelText('Since')).toHaveAttribute('type', 'text');
-    expect(screen.getByLabelText('Until')).toHaveAttribute('type', 'text');
+    // Should have Time labels for both Since and Until
+    expect(screen.getAllByLabelText('Time', { selector: 'input' })).toHaveLength(2);
   });
 
   it('renders mode options', () => {

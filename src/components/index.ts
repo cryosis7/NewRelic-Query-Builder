@@ -8,3 +8,5 @@ export { HealthCheckToggle } from './HealthCheckToggle';
 export { CommonQueriesPanel } from './CommonQueriesPanel';
 export { QueryPreview } from './QueryPreview';
 export { FacetSelector } from './FacetSelector';
+export { DateTimeInput } from './DateTimeInput';
+export { TimePicker } from './TimePicker';
