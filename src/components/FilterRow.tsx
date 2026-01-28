@@ -1,7 +1,6 @@
 import XUIButton from '@xero/xui/react/button';
 import XUIIcon from '@xero/xui/react/icon';
 import crossSmall from '@xero/xui-icon/icons/cross-small';
-import invalid from '@xero/xui-icon/icons/invalid';
 import {
   XUISingleSelect,
   XUISingleSelectLabel,
@@ -104,7 +103,6 @@ export function FilterRow({ filter, metricItemId, onUpdate, onRemove }: FilterRo
             isFieldLayout
             isInvalid={hasEmptyValue}
             validationMessage={hasEmptyValue ? 'Empty filter will be ignored' : undefined}
-            leftElement={hasEmptyValue ? <XUIIcon icon={invalid} color="orange" size="small" title='Invalid Input'/> : undefined}
           />
         </XUIColumn>
         <XUIColumn gridColumns={1}>
