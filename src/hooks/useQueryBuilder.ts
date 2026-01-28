@@ -9,6 +9,7 @@ import type {
   FacetOption,
   MetricQueryItem,
   MetricFilter,
+  FilterField,
 } from '../types/query';
 import { HEALTH_CHECK_PATHS } from '../types/query';
 
@@ -45,53 +46,98 @@ function isDurationMetric(metricType: MetricType): boolean {
   return metricType === 'duration';
 }
 
-function createMetricFilter(): MetricFilter {
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+export function createMetricFilter(field: FilterField = 'duration'): MetricFilter {
   return {
-    isEnabled: false,
-    operator: '>',
+    id: generateId(),
+    field,
+    operator: field === 'response.status' ? '=' : '>',
     value: '',
   };
 }
 
 function createMetricItem(metricType: MetricType, aggregationType: AggregationType): MetricQueryItem {
   return {
-    id: generateMetricItemId(),
+    id: generateId(),
     metricType,
     aggregationType: normalizeAggregationForMetric(metricType, aggregationType),
-    filter: createMetricFilter(),
+    filters: [],
   };
-}
-
-function generateMetricItemId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `metric-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function normalizeAggregationForMetric(metricType: MetricType, aggregationType: AggregationType): AggregationType {
   return isDurationMetric(metricType) ? aggregationType : 'count';
 }
 
-function getStatusClassFilter(metricType: MetricType): string | null {
-  switch (metricType) {
-    case 'status-2xx':
-      return "response.status LIKE '2%'";
-    case 'status-4xx':
-      return "response.status LIKE '4%'";
-    case 'status-5xx':
-      return "response.status LIKE '5%'";
-    default:
-      return null;
-  }
+function normalizeFuzzyStatusCode(value: string): string {
+  // Normalize 4xx, 5xx, 2xx to 4%, 5%, 2%
+  return value.replace(/xx$/i, '%');
 }
 
-function getMetricFilterField(metricType: MetricType): string {
-  if (metricType === 'status-2xx' || metricType === 'status-4xx' || metricType === 'status-5xx') {
-    return 'response.status';
+function parseStatusFilterValue(value: string): { exact: string[], fuzzy: string[] } {
+  const values = value.split(',').map(v => v.trim()).filter(Boolean);
+  const exact: string[] = [];
+  const fuzzy: string[] = [];
+
+  for (const val of values) {
+    // Check if it's a fuzzy pattern (ends with xx or %)
+    if (/xx$/i.test(val) || val.endsWith('%')) {
+      fuzzy.push(normalizeFuzzyStatusCode(val));
+    } else {
+      exact.push(val);
+    }
   }
 
-  return 'duration';
+  return { exact, fuzzy };
+}
+
+function buildStatusFilterCondition(value: string): string {
+  const { exact, fuzzy } = parseStatusFilterValue(value);
+  const conditions: string[] = [];
+
+  if (exact.length === 1) {
+    conditions.push(`response.status = ${exact[0]}`);
+  } else if (exact.length > 1) {
+    conditions.push(`response.status IN (${exact.join(', ')})`);
+  }
+
+  for (const pattern of fuzzy) {
+    conditions.push(`response.status LIKE '${pattern}'`);
+  }
+
+  if (conditions.length === 1) {
+    return conditions[0];
+  } else if (conditions.length > 1) {
+    return `(${conditions.join(' OR ')})`;
+  }
+
+  return '';
+}
+
+function buildSingleFilterCondition(filter: MetricFilter): string | null {
+  const value = filter.value.trim();
+  if (!value) {
+    return null; // Empty filter value - skip it
+  }
+
+  if (filter.field === 'response.status') {
+    return buildStatusFilterCondition(value);
+  }
+
+  // For duration field, use the operator directly
+  return `${filter.field} ${filter.operator} ${value}`;
+}
+
+function buildFilterConditions(filters: MetricFilter[]): string[] {
+  return filters
+    .map(buildSingleFilterCondition)
+    .filter((condition): condition is string => condition !== null);
 }
 
 function formatDateForNrql(isoString: string): string {
@@ -151,21 +197,8 @@ export function buildNrqlQuery(state: QueryState): string {
     return '-- Select at least one metric';
   }
 
-  const itemFilters = state.metricItems.map((item) => {
-    const conditions: string[] = [];
-
-    const statusFilter = getStatusClassFilter(item.metricType);
-    if (statusFilter) {
-      conditions.push(statusFilter);
-    }
-
-    if (item.filter.isEnabled && item.filter.value.trim()) {
-      const field = getMetricFilterField(item.metricType);
-      conditions.push(`${field} ${item.filter.operator} ${item.filter.value.trim()}`);
-    }
-
-    return conditions;
-  });
+  // Build filter conditions for each metric item (empty filters are dropped)
+  const itemFilters = state.metricItems.map((item) => buildFilterConditions(item.filters));
 
   const conditionKey = (conditions: string[]) => conditions.slice().sort().join(' && ');
   const conditionKeys = itemFilters.map(conditionKey);
@@ -260,6 +293,10 @@ function buildMetricSelect(item: MetricQueryItem): string {
     }
   }
 
+  if (item.metricType === 'response.status') {
+    return 'count(response.status)';
+  }
+
   return 'count(*)';
 }
 
@@ -323,6 +360,67 @@ export function useQueryBuilder() {
     }));
   }, []);
 
+  const addFilter = useCallback((metricItemId: string, field: FilterField = 'duration') => {
+    setState(prev => ({
+      ...prev,
+      metricItems: prev.metricItems.map(item => {
+        if (item.id !== metricItemId) {
+          return item;
+        }
+        return {
+          ...item,
+          filters: [...item.filters, createMetricFilter(field)],
+        };
+      }),
+    }));
+  }, []);
+
+  const updateFilter = useCallback((metricItemId: string, filterId: string, updates: Partial<MetricFilter>) => {
+    setState(prev => ({
+      ...prev,
+      metricItems: prev.metricItems.map(item => {
+        if (item.id !== metricItemId) {
+          return item;
+        }
+        return {
+          ...item,
+          filters: item.filters.map(filter => {
+            if (filter.id !== filterId) {
+              return filter;
+            }
+            // When field changes, reset operator to appropriate default
+            const newField = updates.field ?? filter.field;
+            const operatorNeedsReset = updates.field && updates.field !== filter.field;
+            const newOperator = operatorNeedsReset
+              ? (newField === 'response.status' ? '=' : '>')
+              : (updates.operator ?? filter.operator);
+            return {
+              ...filter,
+              ...updates,
+              field: newField,
+              operator: newOperator,
+            };
+          }),
+        };
+      }),
+    }));
+  }, []);
+
+  const removeFilter = useCallback((metricItemId: string, filterId: string) => {
+    setState(prev => ({
+      ...prev,
+      metricItems: prev.metricItems.map(item => {
+        if (item.id !== metricItemId) {
+          return item;
+        }
+        return {
+          ...item,
+          filters: item.filters.filter(f => f.id !== filterId),
+        };
+      }),
+    }));
+  }, []);
+
   const setTimePeriod = useCallback((timePeriod: TimePeriod) => {
     setState(prev => ({ ...prev, timePeriod }));
   }, []);
@@ -372,6 +470,9 @@ export function useQueryBuilder() {
     addMetricItem,
     updateMetricItem,
     removeMetricItem,
+    addFilter,
+    updateFilter,
+    removeFilter,
     setTimePeriod,
     setTimeMode,
     setSince,

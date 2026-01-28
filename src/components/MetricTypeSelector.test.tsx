@@ -23,9 +23,7 @@ describe('MetricTypeSelector', () => {
 
     expect(screen.getByRole('option', { name: 'Duration' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Transaction' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: '2XX Count' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: '4XX Count' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: '5XX Count' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Response Status' })).toBeInTheDocument();
   });
 
   it('calls onChange with duration when that option is clicked', async () => {
@@ -58,7 +56,7 @@ describe('MetricTypeSelector', () => {
     expect(mockOnChange).toHaveBeenCalledWith('transaction-count');
   });
 
-  it('calls onChange with status-4xx when that option is clicked', async () => {
+  it('calls onChange with response.status when that option is clicked', async () => {
     const user = userEvent.setup();
     render(
       <MetricTypeSelector
@@ -69,8 +67,8 @@ describe('MetricTypeSelector', () => {
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
-    await user.click(screen.getByRole('option', { name: '4XX Count' }));
-    expect(mockOnChange).toHaveBeenCalledWith('status-4xx');
+    await user.click(screen.getByRole('option', { name: 'Response Status' }));
+    expect(mockOnChange).toHaveBeenCalledWith('response.status');
   });
 
   it('renders the Metric Type legend', () => {

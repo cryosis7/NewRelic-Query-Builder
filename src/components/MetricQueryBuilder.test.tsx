@@ -8,11 +8,7 @@ function createItem(overrides: Partial<MetricQueryItem> = {}): MetricQueryItem {
     id: 'metric-1',
     metricType: 'transaction-count',
     aggregationType: 'count',
-    filter: {
-      isEnabled: false,
-      operator: '>',
-      value: '',
-    },
+    filters: [],
     ...overrides,
   };
 }
@@ -21,11 +17,17 @@ describe('MetricQueryBuilder', () => {
   const onAddItem = vi.fn();
   const onRemoveItem = vi.fn();
   const onUpdateItem = vi.fn();
+  const onAddFilter = vi.fn();
+  const onUpdateFilter = vi.fn();
+  const onRemoveFilter = vi.fn();
 
   beforeEach(() => {
     onAddItem.mockClear();
     onRemoveItem.mockClear();
     onUpdateItem.mockClear();
+    onAddFilter.mockClear();
+    onUpdateFilter.mockClear();
+    onRemoveFilter.mockClear();
   });
 
   it('renders the Metric Queries label', () => {
@@ -35,6 +37,9 @@ describe('MetricQueryBuilder', () => {
         onAddItem={onAddItem}
         onRemoveItem={onRemoveItem}
         onUpdateItem={onUpdateItem}
+        onAddFilter={onAddFilter}
+        onUpdateFilter={onUpdateFilter}
+        onRemoveFilter={onRemoveFilter}
       />
     );
 
@@ -48,6 +53,9 @@ describe('MetricQueryBuilder', () => {
         onAddItem={onAddItem}
         onRemoveItem={onRemoveItem}
         onUpdateItem={onUpdateItem}
+        onAddFilter={onAddFilter}
+        onUpdateFilter={onUpdateFilter}
+        onRemoveFilter={onRemoveFilter}
       />
     );
 
@@ -62,6 +70,9 @@ describe('MetricQueryBuilder', () => {
         onAddItem={onAddItem}
         onRemoveItem={onRemoveItem}
         onUpdateItem={onUpdateItem}
+        onAddFilter={onAddFilter}
+        onUpdateFilter={onUpdateFilter}
+        onRemoveFilter={onRemoveFilter}
       />
     );
 
@@ -69,20 +80,23 @@ describe('MetricQueryBuilder', () => {
     expect(onAddItem).toHaveBeenCalledTimes(1);
   });
 
-  it('updates filter state when checkbox toggled', async () => {
-    const user = userEvent.setup();
+  it('renders multiple metric items', () => {
     render(
       <MetricQueryBuilder
-        items={[createItem()]}
+        items={[
+          createItem({ id: 'metric-1' }),
+          createItem({ id: 'metric-2' }),
+        ]}
         onAddItem={onAddItem}
         onRemoveItem={onRemoveItem}
         onUpdateItem={onUpdateItem}
+        onAddFilter={onAddFilter}
+        onUpdateFilter={onUpdateFilter}
+        onRemoveFilter={onRemoveFilter}
       />
     );
 
-    await user.click(screen.getByLabelText(/where duration/i));
-    expect(onUpdateItem).toHaveBeenCalledWith('metric-1', expect.objectContaining({
-      filter: expect.objectContaining({ isEnabled: true }),
-    }));
+    expect(screen.getByText('Metric 1')).toBeInTheDocument();
+    expect(screen.getByText('Metric 2')).toBeInTheDocument();
   });
 });

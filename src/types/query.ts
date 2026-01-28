@@ -8,16 +8,17 @@ export type Environment = 'prod' | 'uat';
 export type MetricType = 
   | 'duration'
   | 'transaction-count'
-  | 'status-2xx'
-  | 'status-4xx'
-  | 'status-5xx';
+  | 'response.status';
 
 export type AggregationType =
   | 'count'
   | 'average'
   | 'p95';
 
-export type MetricFilterOperator = '>' | '>=' | '<' | '<=' | '=';
+export type MetricFilterOperator = '>' | '>=' | '<' | '<=' | '=' | 'LIKE' | 'IN';
+
+/** Filter field types - all metric types except transaction-count */
+export type FilterField = 'duration' | 'response.status';
 
 export type FacetOption = 
   | 'none'
@@ -45,7 +46,8 @@ export interface QueryState {
 }
 
 export interface MetricFilter {
-  isEnabled: boolean;
+  id: string;
+  field: FilterField;
   operator: MetricFilterOperator;
   value: string;
 }
@@ -54,7 +56,7 @@ export interface MetricQueryItem {
   id: string;
   metricType: MetricType;
   aggregationType: AggregationType;
-  filter: MetricFilter;
+  filters: MetricFilter[];
 }
 
 export const APPLICATIONS: { value: Application; label: string }[] = [
@@ -71,9 +73,7 @@ export const ENVIRONMENTS: { value: Environment; label: string }[] = [
 export const METRIC_TYPES: { value: MetricType; label: string }[] = [
   { value: 'duration', label: 'Duration' },
   { value: 'transaction-count', label: 'Transaction' },
-  { value: 'status-2xx', label: '2XX Count' },
-  { value: 'status-4xx', label: '4XX Count' },
-  { value: 'status-5xx', label: '5XX Count' },
+  { value: 'response.status', label: 'Response Status' },
 ];
 
 export const AGGREGATION_TYPES: { value: AggregationType; label: string }[] = [
@@ -88,6 +88,13 @@ export const METRIC_FILTER_OPERATORS: { value: MetricFilterOperator; label: stri
   { value: '<', label: '<' },
   { value: '<=', label: '<=' },
   { value: '=', label: '=' },
+  { value: 'LIKE', label: 'LIKE' },
+  { value: 'IN', label: 'IN' },
+];
+
+export const FILTER_FIELDS: { value: FilterField; label: string }[] = [
+  { value: 'duration', label: 'Duration' },
+  { value: 'response.status', label: 'Response Status' },
 ];
 
 export const FACET_OPTIONS: { value: FacetOption; label: string }[] = [

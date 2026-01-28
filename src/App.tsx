@@ -21,6 +21,9 @@ function App() {
     addMetricItem,
     updateMetricItem,
     removeMetricItem,
+    addFilter,
+    updateFilter,
+    removeFilter,
     setTimeMode,
     setSince,
     setUntil,
@@ -71,6 +74,9 @@ function App() {
             onAddItem={addMetricItem}
             onRemoveItem={removeMetricItem}
             onUpdateItem={updateMetricItem}
+            onAddFilter={addFilter}
+            onUpdateFilter={updateFilter}
+            onRemoveFilter={removeFilter}
           />
         </XUIColumn>
       </XUIRow>

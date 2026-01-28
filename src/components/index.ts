@@ -3,6 +3,8 @@ export { EnvironmentSelector } from './EnvironmentSelector';
 export { MetricTypeSelector } from './MetricTypeSelector';
 export { AggregationTypeSelector } from './AggregationTypeSelector';
 export { MetricQueryBuilder } from './MetricQueryBuilder';
+export { MetricItem } from './MetricItem';
+export { FilterRow } from './FilterRow';
 export { TimePeriodSelector } from './TimePeriodSelector';
 export { HealthCheckToggle } from './HealthCheckToggle';
 export { CommonQueriesPanel } from './CommonQueriesPanel';
