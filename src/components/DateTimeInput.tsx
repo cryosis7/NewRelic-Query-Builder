@@ -52,8 +52,8 @@ export function DateTimeInput({ value, onChange, label, id }: DateTimeInputProps
   return (
     <div id={id}>
       <div className="xui-text-label xui-fieldlabel-layout">{label}</div>
-      <XUIRow>
-        <XUIColumn gridColumns="small-6">
+      <XUIRow variant="flex">
+        <XUIColumn gridColumns="half">
           <XUIDateInput
             inputLabel="Date"
             datePickerAriaLabel="Choose date"
@@ -64,9 +64,10 @@ export function DateTimeInput({ value, onChange, label, id }: DateTimeInputProps
             yearDropdownAriaLabel="Select year"
             onSelectDate={handleDateChange}
             selectedDateValue={selectedDate}
+            size='medium'
           />
         </XUIColumn>
-        <XUIColumn gridColumns="small-6">
+        <XUIColumn gridColumns="half">
           <TimePicker value={time} onChange={handleTimeChange} label="Time" />
         </XUIColumn>
       </XUIRow>
