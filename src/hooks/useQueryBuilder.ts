@@ -23,10 +23,10 @@ function getDefaultTimePeriod(): TimePeriod {
   };
   
   return {
-    mode: 'absolute',
+    mode: 'relative',
     since: formatForInput(oneHourAgo),
     until: formatForInput(now),
-    relative: '1h ago',
+    relative: '3h ago',
   };
 }
 
