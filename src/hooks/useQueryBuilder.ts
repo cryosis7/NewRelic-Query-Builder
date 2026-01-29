@@ -266,7 +266,7 @@ export function buildNrqlQuery(state: QueryState): string {
   ];
 
   if (state.useTimeseries) {
-    queryParts.push('TIMESERIES 1 MINUTE');
+    queryParts.push('TIMESERIES AUTO');
   }
 
   queryParts.push(sinceClause);

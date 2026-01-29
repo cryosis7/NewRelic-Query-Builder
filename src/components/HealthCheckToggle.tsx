@@ -1,5 +1,4 @@
-import XUICheckbox, { XUICheckboxGroup } from '@xero/xui/react/checkbox';
-import { HEALTH_CHECK_PATHS } from '../types/query';
+import XUICheckbox, {XUICheckboxGroup} from '@xero/xui/react/checkbox';
 
 interface HealthCheckToggleProps {
   isExcluded: boolean;
@@ -10,11 +9,10 @@ interface HealthCheckToggleProps {
 
 export function HealthCheckToggle({ isExcluded, onChange, useTimeseries, onTimeseriesChange }: HealthCheckToggleProps) {
   return (
-    <XUICheckboxGroup label="Options" isFieldLayout>
+    <XUICheckboxGroup label="Options">
       <XUICheckbox
         isChecked={isExcluded}
         onChange={(e) => onChange(e.target.checked)}
-        hintMessage={isExcluded ? `Excludes: ${HEALTH_CHECK_PATHS.slice(0, 3).join(', ')}...` : undefined}
       >
         Exclude health checks
       </XUICheckbox>
@@ -22,7 +20,7 @@ export function HealthCheckToggle({ isExcluded, onChange, useTimeseries, onTimes
         isChecked={useTimeseries}
         onChange={(e) => onTimeseriesChange(e.target.checked)}
       >
-        Use TIMESERIES
+        As Timeseries
       </XUICheckbox>
     </XUICheckboxGroup>
   );

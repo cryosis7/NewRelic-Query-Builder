@@ -1,4 +1,3 @@
-import './App.css';
 import { XUIRow, XUIColumn } from '@xero/xui/react/structural';
 import { useQueryBuilder } from './hooks/useQueryBuilder';
 import { 
@@ -35,7 +34,7 @@ function App() {
   } = useQueryBuilder();
 
   return (
-    <div className="xui-page-width-standard xui-padding-large">
+    <div className="xui-page-width-large xui-padding-large">
       <h1 className="xui-heading-xlarge xui-margin-bottom-large">New Relic Query Builder</h1>
 
       <CommonQueriesPanel onSelectPreset={applyPreset} />
