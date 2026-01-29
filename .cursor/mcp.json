@@ -1,0 +1,20 @@
+{
+	"mcpServers": {
+		"xero-docs": {
+			"url": "https://xero-docs-mcp-server.xero-test.com/mcp",
+			"type": "http"
+		},
+		"chrome-devtools": {
+			"command": "npx",
+			"args": [
+				"chrome-devtools-mcp@latest"
+			]
+		},
+		"playwright": {
+			"command": "npx",
+			"args": [
+				"@playwright/mcp@latest"
+			]
+		}
+	}
+}

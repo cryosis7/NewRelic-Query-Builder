@@ -14,18 +14,8 @@ import type {
 import { HEALTH_CHECK_PATHS } from '../types/query';
 
 function getDefaultTimePeriod(): TimePeriod {
-  const now = new Date();
-  const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-  
-  // Format for datetime-local input (YYYY-MM-DDTHH:mm)
-  const formatForInput = (date: Date) => {
-    return date.toISOString().slice(0, 16);
-  };
-  
   return {
     mode: 'relative',
-    since: formatForInput(oneHourAgo),
-    until: formatForInput(now),
     relative: '3h ago',
   };
 }
@@ -252,8 +242,11 @@ export function buildNrqlQuery(state: QueryState): string {
     sinceClause = `SINCE ${parsed}`;
     untilClause = 'UNTIL now';
   } else {
-    const since = formatDateForNrql(state.timePeriod.since);
-    const until = formatDateForNrql(state.timePeriod.until);
+    // For absolute mode, use provided values or defaults
+    const sinceValue = state.timePeriod.since || new Date(Date.now() - 3600000).toISOString().slice(0, 16);
+    const untilValue = state.timePeriod.until || new Date().toISOString().slice(0, 16);
+    const since = formatDateForNrql(sinceValue);
+    const until = formatDateForNrql(untilValue);
     sinceClause = `SINCE '${since}'`;
     untilClause = `UNTIL '${until}'`;
   }

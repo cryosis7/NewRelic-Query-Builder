@@ -81,14 +81,15 @@ describe('CommonQueriesPanel', () => {
     
     const calledWith = mockOnSelectPreset.mock.calls[0][0];
     expect(calledWith.timePeriod).toBeDefined();
-    expect(calledWith.timePeriod.since).toBeDefined();
-    expect(calledWith.timePeriod.until).toBeDefined();
+    expect(calledWith.timePeriod.mode).toBeDefined();
+    expect(calledWith.timePeriod.relative).toBeDefined();
+    // since/until are now optional and not required for relative mode
   });
 
-  it('renders exactly 5 preset buttons', () => {
+  it('renders exactly 7 preset buttons', () => {
     render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
     
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(5);
+    expect(buttons).toHaveLength(7);
   });
 });

@@ -2,6 +2,7 @@ import XUIButton from '@xero/xui/react/button';
 import XUIPanel, { XUIPanelSection, XUIPanelSectionHeading } from '@xero/xui/react/panel';
 import { QUERY_PRESETS } from '../data/presets';
 import type { QueryState } from '../types/query';
+import { Flex } from './layout';
 
 interface CommonQueriesPanelProps {
   onSelectPreset: (preset: Partial<QueryState>) => void;
@@ -12,7 +13,7 @@ export function CommonQueriesPanel({ onSelectPreset }: CommonQueriesPanelProps) 
     <XUIPanel>
       <XUIPanelSection className="xui-padding-large">
         <XUIPanelSectionHeading headingLevel={2} className="xui-margin-bottom">Common Queries</XUIPanelSectionHeading>
-        <div className="xui-u-flex xui-u-flex-wrap" style={{ gap: '8px' }}>
+        <Flex wrap gap="8px">
           {QUERY_PRESETS.map((preset) => (
             <XUIButton
               key={preset.id}
@@ -24,7 +25,7 @@ export function CommonQueriesPanel({ onSelectPreset }: CommonQueriesPanelProps) 
               {preset.name}
             </XUIButton>
           ))}
-        </div>
+        </Flex>
       </XUIPanelSection>
     </XUIPanel>
   );

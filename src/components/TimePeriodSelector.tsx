@@ -109,8 +109,8 @@ export function DateTimeInput({value, onChange, label, id}: DateTimeInputProps) 
 
 interface TimePeriodSelectorProps {
     mode: TimePeriodMode;
-    since: string;
-    until: string;
+    since?: string;
+    until?: string;
     relative: string;
     onModeChange: (mode: TimePeriodMode) => void;
     onSinceChange: (value: string) => void;
@@ -130,6 +130,9 @@ export function TimePeriodSelector({
                                        onUntilChange,
                                        onRelativeChange,
                                    }: TimePeriodSelectorProps) {
+    // Provide sensible defaults
+    const sinceValue = since || new Date(Date.now() - 3600000).toISOString().slice(0, 16);
+    const untilValue = until || new Date().toISOString().slice(0, 16);
     const selectedRelativeOption = relative || RELATIVE_OPTIONS[0];
     const relativeOptions = RELATIVE_OPTIONS.includes(selectedRelativeOption)
         ? RELATIVE_OPTIONS
@@ -160,13 +163,13 @@ export function TimePeriodSelector({
                 <>
                     <DateTimeInput
                         label="Since"
-                        value={since}
+                        value={sinceValue}
                         onChange={onSinceChange}
                         id="since-input"
                     />
                     <DateTimeInput
                         label="Until"
-                        value={until}
+                        value={untilValue}
                         onChange={onUntilChange}
                         id="until-input"
                     />

@@ -17,6 +17,8 @@ import {
 } from '../types/query';
 import {FilterRow} from './FilterRow';
 import {plusIcon} from "@xero/xui-icon";
+import {Flex, FlexItem} from './layout';
+import {SectionRule} from './SectionRule';
 
 interface MetricItemProps {
     item: MetricQueryItem;
@@ -48,8 +50,8 @@ export function MetricItem({
         : AGGREGATION_TYPES.filter((aggregation) => aggregation.value === 'count');
 
     return (
-        <div className="xui-u-flex xui-u-flex-justify-start xui-u-flex-align-center">
-            <div className="xui-padding">
+        <Flex justify="start" align="center">
+            <FlexItem className="xui-padding">
                 <XUISingleSelect
                     key={`${item.id}-metricType-${item.metricType}`}
                     defaultSelectedOptionId={item.metricType}
@@ -67,8 +69,8 @@ export function MetricItem({
                         ))}
                     </XUISingleSelectOptions>
                 </XUISingleSelect>
-            </div>
-            <div className="xui-padding">
+            </FlexItem>
+            <FlexItem className="xui-padding">
                 <XUISingleSelect
                     key={`${item.id}-aggregation-${item.aggregationType}`}
                     defaultSelectedOptionId={item.aggregationType}
@@ -86,9 +88,9 @@ export function MetricItem({
                         ))}
                     </XUISingleSelectOptions>
                 </XUISingleSelect>
-            </div>
+            </FlexItem>
 
-            <div>
+            <FlexItem>
                 <XUIButton
                     variant="borderless-main"
                     onClick={() => onAddFilter(item.id)}
@@ -96,35 +98,34 @@ export function MetricItem({
                 >
                     Add Filter
                 </XUIButton>
-            </div>
+            </FlexItem>
 
             {item.filters.length > 0 && (
-                <div>
+                <FlexItem>
                     {item.filters.map((filter, index) => (
                         <div key={filter.id}>
                             <FilterRow
-
                                 filter={filter}
                                 metricItemId={item.id}
                                 onUpdate={onUpdateFilter}
                                 onRemove={onRemoveFilter}
                             />
-                            {index + 1 != item.filters.length && (<hr/>)}
+                            {index + 1 != item.filters.length && (<SectionRule />)}
                         </div>
                     ))}
-                </div>
+                </FlexItem>
             )}
 
             {!isSingleItem && (
-                <div className="xui-margin-left">
+                <FlexItem className="xui-margin-left">
                     <XUIButton
                         variant="negative"
                         onClick={() => onRemoveItem(item.id)}
                     >
                         Remove
                     </XUIButton>
-                </div>
+                </FlexItem>
             )}
-        </div>
+        </Flex>
     );
 }

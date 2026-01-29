@@ -9,15 +9,8 @@ export interface QueryPreset {
 
 // Helper to get time period for last N hours
 function getLastNHours(hours: number): TimePeriod {
-  const now = new Date();
-  const since = new Date(now.getTime() - hours * 60 * 60 * 1000);
-  
-  const formatForInput = (date: Date) => date.toISOString().slice(0, 16);
-  
   return {
-    mode: 'absolute',
-    since: formatForInput(since),
-    until: formatForInput(now),
+    mode: 'relative',
     relative: `${hours}h ago`,
   };
 }
@@ -121,6 +114,105 @@ export const QUERY_PRESETS: QueryPreset[] = [
       timePeriod: getLastNHours(1),
       excludeHealthChecks: true,
       facet: 'request.uri',
+    },
+  },
+  {
+    id: 'gtm-latency-3h',
+    name: 'GTM Latency - Last 3 Hours',
+    description: 'Average duration for all applications over the last 3 hours',
+    state: {
+      applications: ['global-tax-mapper-api', 'global-tax-mapper-bff', 'global-tax-mapper-integrator-api'],
+      environment: 'prod',
+      metricItems: [
+        {
+          id: 'preset-gtm-latency-3h',
+          metricType: 'duration',
+          aggregationType: 'average',
+          filters: [],
+        },
+      ],
+      timePeriod: getLastNHours(3),
+      excludeHealthChecks: true,
+      useTimeseries: true,
+      facet: 'name',
+    },
+  },
+  {
+    id: 'api-throughput-3h',
+    name: 'API Throughput - Last 3 Hours',
+    description: 'Total count and counts by response status (2xx, 4xx, 5xx) for the last 3 hours',
+    state: {
+      applications: ['global-tax-mapper-api'],
+      environment: 'prod',
+      metricItems: [
+        {
+          id: 'preset-api-throughput-total',
+          metricType: 'transaction-count',
+          aggregationType: 'count',
+          filters: [],
+        },
+        {
+          id: 'preset-api-throughput-2xx',
+          metricType: 'response.status',
+          aggregationType: 'count',
+          filters: [
+            {
+              id: 'filter-2xx',
+              field: 'response.status',
+              operator: '>=',
+              value: '200',
+            },
+            {
+              id: 'filter-2xx-upper',
+              field: 'response.status',
+              operator: '<',
+              value: '300',
+            },
+          ],
+        },
+        {
+          id: 'preset-api-throughput-4xx',
+          metricType: 'response.status',
+          aggregationType: 'count',
+          filters: [
+            {
+              id: 'filter-4xx',
+              field: 'response.status',
+              operator: '>=',
+              value: '400',
+            },
+            {
+              id: 'filter-4xx-upper',
+              field: 'response.status',
+              operator: '<',
+              value: '500',
+            },
+          ],
+        },
+        {
+          id: 'preset-api-throughput-5xx',
+          metricType: 'response.status',
+          aggregationType: 'count',
+          filters: [
+            {
+              id: 'filter-5xx',
+              field: 'response.status',
+              operator: '>=',
+              value: '500',
+            },
+            {
+              id: 'filter-5xx-upper',
+              field: 'response.status',
+              operator: '<',
+              value: '600',
+            },
+          ],
+        },
+      ],
+      timePeriod: getLastNHours(3),
+      excludeHealthChecks: true,
+      useTimeseries: true,
+      facet: 'none',
     },
   },
 ];

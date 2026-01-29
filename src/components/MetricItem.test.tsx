@@ -55,7 +55,7 @@ describe('MetricItem', () => {
     expect(screen.getByText('Metric 1')).toBeInTheDocument();
   });
 
-  it('disables remove button when isSingleItem is true', () => {
+  it('does not render remove button when isSingleItem is true', () => {
     render(
       <MetricItem
         item={createItem()}
@@ -69,7 +69,7 @@ describe('MetricItem', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /remove/i })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument();
   });
 
   it('enables remove button when isSingleItem is false', () => {
@@ -122,11 +122,11 @@ describe('MetricItem', () => {
       />
     );
 
-    expect(screen.getByText('Filters (AND)')).toBeInTheDocument();
     expect(screen.getByDisplayValue('0.5')).toBeInTheDocument();
+    expect(screen.getByLabelText('Field')).toBeInTheDocument();
   });
 
-  it('does not render Filters (AND) label when no filters', () => {
+  it('does not render filter rows when no filters', () => {
     render(
       <MetricItem
         item={createItem({ filters: [] })}
@@ -140,7 +140,7 @@ describe('MetricItem', () => {
       />
     );
 
-    expect(screen.queryByText('Filters (AND)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Field')).not.toBeInTheDocument();
   });
 
   it('renders multiple filters', () => {

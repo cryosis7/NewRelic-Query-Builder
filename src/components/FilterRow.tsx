@@ -9,6 +9,7 @@ import {
 } from '@xero/xui/react/singleselect';
 import XUITextInput from '@xero/xui/react/textinput';
 import {FILTER_FIELDS, type FilterField, METRIC_FILTER_OPERATORS, type MetricFilter,} from '../types/query';
+import {Flex, FlexItem} from './layout';
 
 interface FilterRowProps {
     filter: MetricFilter;
@@ -42,14 +43,9 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
     const hasEmptyValue = !filter.value.trim();
 
     return (
-        <div className="xui-u-flex xui-u-flex-justify-start xui-u-flex-align-start">
-            <div style={{
-                alignSelf: "stretch",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-            }}>
-                <div style={{display: "flex", alignItems: "center", justifyContent: "center"}}>
+        <Flex justify="start" align="start">
+            <FlexItem alignSelf="stretch" alignContent="center">
+                <Flex align="center" justify="center">
                     <XUIIconButton
                         className="xui-padding-xsmall-bottom"
                         style={{width: '36px', height: '36px'}}
@@ -59,10 +55,10 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                         icon={clear}
                         onClick={() => onRemove(metricItemId, filter.id)}
                     />
-                </div>
-            </div>
+                </Flex>
+            </FlexItem>
 
-            <div className="xui-padding-xsmall">
+            <FlexItem className="xui-padding-xsmall">
                 <XUISingleSelect
                     key={`${filter.id}-field-${filter.field}`}
                     defaultSelectedOptionId={filter.field}
@@ -80,9 +76,9 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                         ))}
                     </XUISingleSelectOptions>
                 </XUISingleSelect>
-            </div>
+            </FlexItem>
             {!isStatusField && (
-                <div className="xui-padding-xsmall">
+                <FlexItem className="xui-padding-xsmall">
                     <XUISingleSelect
                         key={`${filter.id}-operator-${filter.operator}`}
                         defaultSelectedOptionId={filter.operator}
@@ -100,9 +96,9 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                             ))}
                         </XUISingleSelectOptions>
                     </XUISingleSelect>
-                </div>
+                </FlexItem>
             )}
-            <div className="xui-padding-xsmall" style={{flex: 1}}>
+            <FlexItem grow className="xui-padding-xsmall">
                 <XUITextInput
                     label="Value"
                     type="text"
@@ -113,7 +109,7 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                     }
                     isInvalid={hasEmptyValue}
                 />
-            </div>
-        </div>
+            </FlexItem>
+        </Flex>
     );
 }

@@ -68,6 +68,7 @@ function App() {
 
       <XUIRow variant="grid" className="xui-margin-top">
         <XUIColumn gridColumns={12}>
+          <hr/>
           <MetricQueryBuilder
             items={state.metricItems}
             onAddItem={addMetricItem}
@@ -77,6 +78,7 @@ function App() {
             onUpdateFilter={updateFilter}
             onRemoveFilter={removeFilter}
           />
+          <hr/>
         </XUIColumn>
       </XUIRow>
 

@@ -30,7 +30,7 @@ describe('MetricQueryBuilder', () => {
     onRemoveFilter.mockClear();
   });
 
-  it('renders the Metric Queries label', () => {
+  it('renders a metric item', () => {
     render(
       <MetricQueryBuilder
         items={[createItem()]}
@@ -43,10 +43,30 @@ describe('MetricQueryBuilder', () => {
       />
     );
 
-    expect(screen.getByText('Metric Queries')).toBeInTheDocument();
+    expect(screen.getByText('Metric 1')).toBeInTheDocument();
   });
 
-  it('disables remove when only one item is present', () => {
+  it('renders a section rule separator between multiple items', () => {
+    render(
+      <MetricQueryBuilder
+        items={[
+          createItem({ id: 'metric-1' }),
+          createItem({ id: 'metric-2' }),
+        ]}
+        onAddItem={onAddItem}
+        onRemoveItem={onRemoveItem}
+        onUpdateItem={onUpdateItem}
+        onAddFilter={onAddFilter}
+        onUpdateFilter={onUpdateFilter}
+        onRemoveFilter={onRemoveFilter}
+      />
+    );
+
+    const separator = screen.getByRole('separator');
+    expect(separator).toBeInTheDocument();
+  });
+
+  it('does not render a section rule separator for a single item', () => {
     render(
       <MetricQueryBuilder
         items={[createItem()]}
@@ -59,7 +79,8 @@ describe('MetricQueryBuilder', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /remove/i })).toBeDisabled();
+    const separator = screen.queryByRole('separator');
+    expect(separator).not.toBeInTheDocument();
   });
 
   it('calls onAddItem when Add metric is clicked', async () => {

@@ -1,6 +1,7 @@
 import XUIButton from '@xero/xui/react/button';
 import type {FilterField, MetricFilter, MetricQueryItem} from '../types/query';
 import {MetricItem} from './MetricItem';
+import {SectionRule} from './SectionRule';
 
 interface MetricQueryBuilderProps {
     items: MetricQueryItem[];
@@ -26,6 +27,7 @@ export function MetricQueryBuilder({
         <div>
             {items.map((item, index) => {
                 const isSingleItem = items.length === 1;
+                const isLastItem = index === items.length - 1;
 
                 return (
                     <div key={item.id}>
@@ -39,7 +41,7 @@ export function MetricQueryBuilder({
                         onUpdateFilter={onUpdateFilter}
                         onRemoveFilter={onRemoveFilter}
                     />
-                        <hr/>
+                        {!isLastItem && <SectionRule />}
                     </div>
                 );
             })}

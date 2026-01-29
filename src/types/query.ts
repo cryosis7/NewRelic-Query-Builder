@@ -30,8 +30,8 @@ export type TimePeriodMode = 'absolute' | 'relative';
 
 export interface TimePeriod {
   mode: TimePeriodMode;
-  since: string; // ISO datetime string from datetime-local input
-  until: string; // ISO datetime string from datetime-local input
+  since?: string; // ISO datetime string from datetime-local input (for absolute mode)
+  until?: string; // ISO datetime string from datetime-local input (for absolute mode)
   relative: string; // e.g. "3h ago"
 }
 

@@ -10,3 +10,5 @@ export { HealthCheckToggle } from './HealthCheckToggle';
 export { CommonQueriesPanel } from './CommonQueriesPanel';
 export { QueryPreview } from './QueryPreview';
 export { FacetSelector } from './FacetSelector';
+export { SectionRule } from './SectionRule';
+export { Flex, FlexItem } from './layout';
