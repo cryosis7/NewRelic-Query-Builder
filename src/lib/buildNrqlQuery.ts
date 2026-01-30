@@ -1,9 +1,5 @@
-import {useCallback, useMemo, useState} from 'react';
 import type {
   AggregationType,
-  Application,
-  Environment,
-  FacetOption,
   FilterField,
   MetricFilter,
   MetricQueryItem,
@@ -13,14 +9,14 @@ import type {
 } from '../types/query';
 import {HEALTH_CHECK_PATHS} from '../types/query';
 
-function getDefaultTimePeriod(): TimePeriod {
+export function getDefaultTimePeriod(): TimePeriod {
   return {
     mode: 'relative',
     relative: '3h ago',
   };
 }
 
-function getInitialState(): QueryState {
+export function getInitialState(): QueryState {
   return {
     applications: ['global-tax-mapper-api'],
     environment: 'prod',
@@ -36,7 +32,7 @@ function isDurationMetric(metricType: MetricType): boolean {
   return metricType === 'duration';
 }
 
-function generateId(): string {
+export function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
@@ -52,7 +48,7 @@ export function createMetricFilter(field: FilterField = 'duration'): MetricFilte
   };
 }
 
-function createMetricItem(metricType: MetricType, aggregationType: AggregationType): MetricQueryItem {
+export function createMetricItem(metricType: MetricType, aggregationType: AggregationType): MetricQueryItem {
   return {
     id: generateId(),
     metricType,
@@ -289,190 +285,4 @@ function buildMetricSelect(item: MetricQueryItem): string {
   }
 
   return 'count(*)';
-}
-
-export function useQueryBuilder() {
-  const [state, setState] = useState<QueryState>(getInitialState);
-
-  const query = useMemo(() => buildNrqlQuery(state), [state]);
-
-  const setApplications = useCallback((applications: Application[]) => {
-    setState(prev => ({ ...prev, applications }));
-  }, []);
-
-  const toggleApplication = useCallback((app: Application) => {
-    setState(prev => ({
-      ...prev,
-      applications: prev.applications.includes(app)
-        ? prev.applications.filter(a => a !== app)
-        : [...prev.applications, app],
-    }));
-  }, []);
-
-  const setEnvironment = useCallback((environment: Environment) => {
-    setState(prev => ({ ...prev, environment }));
-  }, []);
-
-  const addMetricItem = useCallback(() => {
-    setState(prev => ({
-      ...prev,
-      metricItems: [...prev.metricItems, createMetricItem('transaction-count', 'count')],
-    }));
-  }, []);
-
-  const updateMetricItem = useCallback((id: string, updates: Partial<MetricQueryItem>) => {
-    setState(prev => ({
-      ...prev,
-      metricItems: prev.metricItems.map(item => {
-        if (item.id !== id) {
-          return item;
-        }
-
-        const updatedMetricType = updates.metricType ?? item.metricType;
-        const updatedAggregationType = normalizeAggregationForMetric(
-          updatedMetricType,
-          updates.aggregationType ?? item.aggregationType
-        );
-
-        return {
-          ...item,
-          ...updates,
-          metricType: updatedMetricType,
-          aggregationType: updatedAggregationType,
-        };
-      }),
-    }));
-  }, []);
-
-  const removeMetricItem = useCallback((id: string) => {
-    setState(prev => ({
-      ...prev,
-      metricItems: prev.metricItems.filter(item => item.id !== id),
-    }));
-  }, []);
-
-  const addFilter = useCallback((metricItemId: string, field: FilterField = 'duration') => {
-    setState(prev => ({
-      ...prev,
-      metricItems: prev.metricItems.map(item => {
-        if (item.id !== metricItemId) {
-          return item;
-        }
-        return {
-          ...item,
-          filters: [...item.filters, createMetricFilter(field)],
-        };
-      }),
-    }));
-  }, []);
-
-  const updateFilter = useCallback((metricItemId: string, filterId: string, updates: Partial<MetricFilter>) => {
-    setState(prev => ({
-      ...prev,
-      metricItems: prev.metricItems.map(item => {
-        if (item.id !== metricItemId) {
-          return item;
-        }
-        return {
-          ...item,
-          filters: item.filters.map(filter => {
-            if (filter.id !== filterId) {
-              return filter;
-            }
-            // When field changes, reset operator to appropriate default
-            const newField = updates.field ?? filter.field;
-            const operatorNeedsReset = updates.field && updates.field !== filter.field;
-            const newOperator = operatorNeedsReset
-              ? (newField === 'response.status' ? '=' : '>')
-              : (updates.operator ?? filter.operator);
-            return {
-              ...filter,
-              ...updates,
-              field: newField,
-              operator: newOperator,
-            };
-          }),
-        };
-      }),
-    }));
-  }, []);
-
-  const removeFilter = useCallback((metricItemId: string, filterId: string) => {
-    setState(prev => ({
-      ...prev,
-      metricItems: prev.metricItems.map(item => {
-        if (item.id !== metricItemId) {
-          return item;
-        }
-        return {
-          ...item,
-          filters: item.filters.filter(f => f.id !== filterId),
-        };
-      }),
-    }));
-  }, []);
-
-  const setTimePeriod = useCallback((timePeriod: TimePeriod) => {
-    setState(prev => ({ ...prev, timePeriod }));
-  }, []);
-
-  const setTimeMode = useCallback((mode: TimePeriod['mode']) => {
-    setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, mode } }));
-  }, []);
-
-  const setSince = useCallback((since: string) => {
-    setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, since } }));
-  }, []);
-
-  const setUntil = useCallback((until: string) => {
-    setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, until } }));
-  }, []);
-
-  const setRelative = useCallback((relative: string) => {
-    setState(prev => ({ ...prev, timePeriod: { ...prev.timePeriod, relative } }));
-  }, []);
-
-  const setExcludeHealthChecks = useCallback((excludeHealthChecks: boolean) => {
-    setState(prev => ({ ...prev, excludeHealthChecks }));
-  }, []);
-
-  const setUseTimeseries = useCallback((useTimeseries: boolean) => {
-    setState(prev => ({ ...prev, useTimeseries }));
-  }, []);
-
-  const setFacet = useCallback((facet: FacetOption) => {
-    setState(prev => ({ ...prev, facet }));
-  }, []);
-
-  const applyPreset = useCallback((preset: Partial<QueryState>) => {
-    setState(prev => ({ ...prev, ...preset }));
-  }, []);
-
-  const reset = useCallback(() => {
-    setState(getInitialState());
-  }, []);
-
-  return {
-    state,
-    query,
-    setApplications,
-    toggleApplication,
-    setEnvironment,
-    addMetricItem,
-    updateMetricItem,
-    removeMetricItem,
-    addFilter,
-    updateFilter,
-    removeFilter,
-    setTimePeriod,
-    setTimeMode,
-    setSince,
-    setUntil,
-    setRelative,
-    setExcludeHealthChecks,
-    setUseTimeseries,
-    setFacet,
-    applyPreset,
-    reset,
-  };
 }

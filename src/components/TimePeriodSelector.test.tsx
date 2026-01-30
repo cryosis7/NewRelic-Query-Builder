@@ -1,5 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { Provider, createStore } from 'jotai';
 import { TimePeriodSelector, TimePicker, DateTimeInput } from './TimePeriodSelector';
+import { timePeriodAtom } from '../atoms';
 
 describe('TimePicker', () => {
   const mockOnChange = vi.fn();
@@ -94,31 +96,18 @@ describe('DateTimeInput', () => {
 });
 
 describe('TimePeriodSelector', () => {
-  const mockOnSinceChange = vi.fn();
-  const mockOnUntilChange = vi.fn();
-  const mockOnModeChange = vi.fn();
-  const mockOnRelativeChange = vi.fn();
-  const defaultProps = {
-    mode: 'absolute' as const,
-    since: '2026-01-28T08:00',
-    until: '2026-01-28T09:00',
-    relative: '1h ago',
-    onModeChange: mockOnModeChange,
-    onSinceChange: mockOnSinceChange,
-    onUntilChange: mockOnUntilChange,
-    onRelativeChange: mockOnRelativeChange,
-  };
-
-  beforeEach(() => {
-    mockOnSinceChange.mockClear();
-    mockOnUntilChange.mockClear();
-    mockOnModeChange.mockClear();
-    mockOnRelativeChange.mockClear();
-  });
-
   it('renders Since and Until labels', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     expect(screen.getByText('Since')).toBeInTheDocument();
@@ -126,8 +115,17 @@ describe('TimePeriodSelector', () => {
   });
 
   it('displays the provided since time values', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
@@ -135,47 +133,92 @@ describe('TimePeriodSelector', () => {
   });
 
   it('displays the provided until time values', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
     expect(timeInputs[1]).toHaveValue('09:00');
   });
 
-  it('calls onSinceChange when since time is changed', () => {
+  it('updates atom when since time is changed', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
     fireEvent.change(timeInputs[0], { target: { value: '10:00' } });
 
-    expect(mockOnSinceChange).toHaveBeenLastCalledWith('2026-01-28T10:00');
+    expect(store.get(timePeriodAtom).since).toBe('2026-01-28T10:00');
   });
 
-  it('calls onUntilChange when until time is changed', () => {
+  it('updates atom when until time is changed', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     const timeInputs = screen.getAllByLabelText('Time', { selector: 'input' });
     fireEvent.change(timeInputs[1], { target: { value: '12:00' } });
 
-    expect(mockOnUntilChange).toHaveBeenLastCalledWith('2026-01-28T12:00');
+    expect(store.get(timePeriodAtom).until).toBe('2026-01-28T12:00');
   });
 
   it('renders the Time Period legend', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     expect(screen.getByText('Time Period')).toBeInTheDocument();
   });
 
   it('renders time pickers for absolute mode', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     // Should have Time labels for both Since and Until
@@ -183,25 +226,40 @@ describe('TimePeriodSelector', () => {
   });
 
   it('renders mode options', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector {...defaultProps} />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     expect(screen.getByText('Exact')).toBeInTheDocument();
     expect(screen.getByText('Relative')).toBeInTheDocument();
   });
 
-  it('calls onRelativeChange when relative input changes', () => {
+  it('updates atom when relative input changes', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'relative',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
     render(
-      <TimePeriodSelector
-        {...defaultProps}
-        mode="relative"
-      />
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
     );
 
     fireEvent.change(screen.getByLabelText('Relative', { selector: 'input[type="text"]' }), {
       target: { value: '3h ago' },
     });
-    expect(mockOnRelativeChange).toHaveBeenCalledWith('3h ago');
+    expect(store.get(timePeriodAtom).relative).toBe('3h ago');
   });
 });

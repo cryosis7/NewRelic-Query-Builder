@@ -1,3 +1,4 @@
+import { useAtom } from 'jotai';
 import {
   XUISingleSelect,
   XUISingleSelectLabel,
@@ -6,18 +7,16 @@ import {
   XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
 import { ENVIRONMENTS, type Environment } from '../types/query';
+import { environmentAtom } from '../atoms';
 
-interface EnvironmentSelectorProps {
-  selectedEnvironment: Environment;
-  onChange: (env: Environment) => void;
-}
+export function EnvironmentSelector() {
+  const [selectedEnvironment, setSelectedEnvironment] = useAtom(environmentAtom);
 
-export function EnvironmentSelector({ selectedEnvironment, onChange }: EnvironmentSelectorProps) {
   return (
     <XUISingleSelect
       key={`environment-${selectedEnvironment}`}
       defaultSelectedOptionId={selectedEnvironment}
-      onSelect={(value) => onChange(value as Environment)}
+      onSelect={(value) => setSelectedEnvironment(value as Environment)}
     >
       <XUISingleSelectLabel>Environment</XUISingleSelectLabel>
       <XUISingleSelectTrigger />

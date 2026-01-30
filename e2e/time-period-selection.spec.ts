@@ -71,10 +71,9 @@ test.describe('Time Period Selection', () => {
       const relativeInput = page.getByRole('textbox', { name: 'Relative' });
       await expect(relativeInput).toBeVisible();
 
-      // Since/Until Date inputs should NOT be visible (they're in the group "Time Period" but specific to Exact mode)
-      const timePeriodGroup = page.getByRole('group', { name: 'Time Period' });
-      await expect(timePeriodGroup.getByText('Since')).not.toBeVisible();
-      await expect(timePeriodGroup.getByText('Until')).not.toBeVisible();
+      // Since/Until Date inputs should NOT be visible (they're conditionally rendered only in absolute mode)
+      const dateInputs = page.getByRole('textbox', { name: 'Date' });
+      await expect(dateInputs).toHaveCount(0);
     });
 
     test('3.2.2 Default relative value - Shows "3 hours ago" type query', async ({ page }) => {

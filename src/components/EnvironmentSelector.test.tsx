@@ -1,21 +1,18 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider, createStore } from 'jotai';
 import { EnvironmentSelector } from './EnvironmentSelector';
+import { environmentAtom } from '../atoms';
 
 describe('EnvironmentSelector', () => {
-  const mockOnChange = vi.fn();
-
-  beforeEach(() => {
-    mockOnChange.mockClear();
-  });
-
   it('renders Production and UAT options', async () => {
     const user = userEvent.setup();
+    const store = createStore();
+    store.set(environmentAtom, 'prod');
     render(
-      <EnvironmentSelector
-        selectedEnvironment="prod"
-        onChange={mockOnChange}
-      />
+      <Provider store={store}>
+        <EnvironmentSelector />
+      </Provider>
     );
 
     // Open the dropdown first
@@ -25,42 +22,45 @@ describe('EnvironmentSelector', () => {
     expect(screen.getByRole('option', { name: 'UAT' })).toBeInTheDocument();
   });
 
-  it('calls onChange with prod when Production is clicked', async () => {
+  it('updates atom when Production is clicked', async () => {
     const user = userEvent.setup();
+    const store = createStore();
+    store.set(environmentAtom, 'uat');
     render(
-      <EnvironmentSelector
-        selectedEnvironment="uat"
-        onChange={mockOnChange}
-      />
+      <Provider store={store}>
+        <EnvironmentSelector />
+      </Provider>
     );
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
     await user.click(screen.getByRole('option', { name: 'Production' }));
-    expect(mockOnChange).toHaveBeenCalledWith('prod');
+    expect(store.get(environmentAtom)).toBe('prod');
   });
 
-  it('calls onChange with uat when UAT is clicked', async () => {
+  it('updates atom when UAT is clicked', async () => {
     const user = userEvent.setup();
+    const store = createStore();
+    store.set(environmentAtom, 'prod');
     render(
-      <EnvironmentSelector
-        selectedEnvironment="prod"
-        onChange={mockOnChange}
-      />
+      <Provider store={store}>
+        <EnvironmentSelector />
+      </Provider>
     );
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
     await user.click(screen.getByRole('option', { name: 'UAT' }));
-    expect(mockOnChange).toHaveBeenCalledWith('uat');
+    expect(store.get(environmentAtom)).toBe('uat');
   });
 
   it('renders the Environment legend', () => {
+    const store = createStore();
+    store.set(environmentAtom, 'prod');
     render(
-      <EnvironmentSelector
-        selectedEnvironment="prod"
-        onChange={mockOnChange}
-      />
+      <Provider store={store}>
+        <EnvironmentSelector />
+      </Provider>
     );
 
     expect(screen.getByText('Environment')).toBeInTheDocument();

@@ -1,3 +1,4 @@
+import { useSetAtom } from 'jotai';
 import XUIButton from '@xero/xui/react/button';
 import {
     XUISingleSelect,
@@ -9,9 +10,7 @@ import {
 import {
     AGGREGATION_TYPES,
     type AggregationType,
-    type FilterField,
     METRIC_TYPES,
-    type MetricFilter,
     type MetricQueryItem,
     type MetricType,
 } from '../types/query';
@@ -19,16 +18,18 @@ import {FilterRow} from './FilterRow';
 import {plusIcon} from "@xero/xui-icon";
 import {Flex, FlexItem} from './layout';
 import {SectionRule} from './SectionRule';
+import {
+    updateMetricItemAtom,
+    removeMetricItemAtom,
+    addFilterAtom,
+    updateFilterAtom,
+    removeFilterAtom,
+} from '../atoms';
 
 interface MetricItemProps {
     item: MetricQueryItem;
     index: number;
     isSingleItem: boolean;
-    onRemoveItem: (id: string) => void;
-    onUpdateItem: (id: string, updates: Partial<MetricQueryItem>) => void;
-    onAddFilter: (metricItemId: string, field?: FilterField) => void;
-    onUpdateFilter: (metricItemId: string, filterId: string, updates: Partial<MetricFilter>) => void;
-    onRemoveFilter: (metricItemId: string, filterId: string) => void;
 }
 
 function isDurationMetric(metricType: MetricType): boolean {
@@ -39,12 +40,13 @@ export function MetricItem({
                                item,
                                index,
                                isSingleItem,
-                               onRemoveItem,
-                               onUpdateItem,
-                               onAddFilter,
-                               onUpdateFilter,
-                               onRemoveFilter,
                            }: MetricItemProps) {
+    const updateItem = useSetAtom(updateMetricItemAtom);
+    const removeItem = useSetAtom(removeMetricItemAtom);
+    const addFilter = useSetAtom(addFilterAtom);
+    const updateFilter = useSetAtom(updateFilterAtom);
+    const removeFilter = useSetAtom(removeFilterAtom);
+
     const availableAggregations = isDurationMetric(item.metricType)
         ? AGGREGATION_TYPES
         : AGGREGATION_TYPES.filter((aggregation) => aggregation.value === 'count');
@@ -56,7 +58,7 @@ export function MetricItem({
                     key={`${item.id}-metricType-${item.metricType}`}
                     defaultSelectedOptionId={item.metricType}
                     onSelect={(selectedValue) =>
-                        onUpdateItem(item.id, {metricType: selectedValue as MetricType})
+                        updateItem({ id: item.id, updates: {metricType: selectedValue as MetricType} })
                     }
                 >
                     <XUISingleSelectLabel>Metric {index + 1}</XUISingleSelectLabel>
@@ -75,7 +77,7 @@ export function MetricItem({
                     key={`${item.id}-aggregation-${item.aggregationType}`}
                     defaultSelectedOptionId={item.aggregationType}
                     onSelect={(selectedValue) =>
-                        onUpdateItem(item.id, {aggregationType: selectedValue as AggregationType})
+                        updateItem({ id: item.id, updates: {aggregationType: selectedValue as AggregationType} })
                     }
                 >
                     <XUISingleSelectLabel>Aggregation</XUISingleSelectLabel>
@@ -93,7 +95,7 @@ export function MetricItem({
             <FlexItem>
                 <XUIButton
                     variant="borderless-main"
-                    onClick={() => onAddFilter(item.id)}
+                    onClick={() => addFilter({ metricItemId: item.id })}
                     leftIcon={plusIcon}
                 >
                     Add Filter
@@ -107,8 +109,12 @@ export function MetricItem({
                             <FilterRow
                                 filter={filter}
                                 metricItemId={item.id}
-                                onUpdate={onUpdateFilter}
-                                onRemove={onRemoveFilter}
+                                onUpdate={(metricItemId, filterId, updates) =>
+                                    updateFilter({ metricItemId, filterId, updates })
+                                }
+                                onRemove={(metricItemId, filterId) =>
+                                    removeFilter({ metricItemId, filterId })
+                                }
                             />
                             {index + 1 != item.filters.length && (<SectionRule/>)}
                         </div>
@@ -120,7 +126,7 @@ export function MetricItem({
                 <XUIButton
                     style={{marginLeft: 'auto'}}
                     variant="negative"
-                    onClick={() => onRemoveItem(item.id)}
+                    onClick={() => removeItem(item.id)}
                 >
                     Remove
                 </XUIButton>

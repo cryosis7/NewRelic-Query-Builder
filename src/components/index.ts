@@ -6,7 +6,7 @@ export { MetricQueryBuilder } from './MetricQueryBuilder';
 export { MetricItem } from './MetricItem';
 export { FilterRow } from './FilterRow';
 export { TimePeriodSelector } from './TimePeriodSelector';
-export { HealthCheckToggle } from './HealthCheckToggle';
+export { QueryOptions } from './QueryOptions';
 export { CommonQueriesPanelSection } from './CommonQueriesPanelSection.tsx';
 export { QueryPreview } from './QueryPreview';
 export { FacetSelector } from './FacetSelector';

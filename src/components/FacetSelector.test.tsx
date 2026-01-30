@@ -1,12 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider, createStore } from 'jotai';
 import { FacetSelector } from './FacetSelector';
+import { facetAtom } from '../atoms';
 
 describe('FacetSelector', () => {
   it('renders all facet options', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<FacetSelector selectedFacet="request.uri" onChange={onChange} />);
+    const store = createStore();
+    store.set(facetAtom, 'request.uri');
+    render(
+      <Provider store={store}>
+        <FacetSelector />
+      </Provider>
+    );
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
@@ -18,27 +25,37 @@ describe('FacetSelector', () => {
     expect(screen.getByRole('option', { name: 'Transaction Name' })).toBeInTheDocument();
   });
 
-  it('calls onChange when a facet option is clicked', async () => {
+  it('updates atom when a facet option is clicked', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<FacetSelector selectedFacet="request.uri" onChange={onChange} />);
+    const store = createStore();
+    store.set(facetAtom, 'request.uri');
+    render(
+      <Provider store={store}>
+        <FacetSelector />
+      </Provider>
+    );
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
     await user.click(screen.getByRole('option', { name: 'HTTP Method' }));
 
-    expect(onChange).toHaveBeenCalledWith('http.method');
+    expect(store.get(facetAtom)).toBe('http.method');
   });
 
   it('handles "none" selection', async () => {
     const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<FacetSelector selectedFacet="request.uri" onChange={onChange} />);
+    const store = createStore();
+    store.set(facetAtom, 'request.uri');
+    render(
+      <Provider store={store}>
+        <FacetSelector />
+      </Provider>
+    );
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
     await user.click(screen.getByRole('option', { name: 'No Facet' }));
 
-    expect(onChange).toHaveBeenCalledWith('none');
+    expect(store.get(facetAtom)).toBe('none');
   });
 });

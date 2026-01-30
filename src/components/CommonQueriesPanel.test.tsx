@@ -1,23 +1,29 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider, createStore } from 'jotai';
 import { CommonQueriesPanelSection } from './CommonQueriesPanelSection.tsx';
 import { QUERY_PRESETS } from '../data/presets';
+import { applicationsAtom, environmentAtom, metricItemsAtom, timePeriodAtom, excludeHealthChecksAtom } from '../atoms';
 
 describe('CommonQueriesPanel', () => {
-  const mockOnSelectPreset = vi.fn();
-
-  beforeEach(() => {
-    mockOnSelectPreset.mockClear();
-  });
-
   it('renders the Common Queries heading', () => {
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     expect(screen.getByText('Common Queries')).toBeInTheDocument();
   });
 
   it('renders all preset buttons', () => {
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     QUERY_PRESETS.forEach((preset) => {
       expect(screen.getByRole('button', { name: preset.name })).toBeInTheDocument();
@@ -25,7 +31,12 @@ describe('CommonQueriesPanel', () => {
   });
 
   it('renders buttons with title attribute containing description', () => {
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     QUERY_PRESETS.forEach((preset) => {
       const button = screen.getByRole('button', { name: preset.name });
@@ -33,63 +44,82 @@ describe('CommonQueriesPanel', () => {
     });
   });
 
-  it('calls onSelectPreset with correct state when API Prod button is clicked', async () => {
+  it('updates atoms when API Prod button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     await user.click(screen.getByRole('button', { name: 'API Prod - Last Hour' }));
     
-    expect(mockOnSelectPreset).toHaveBeenCalledTimes(1);
-    const calledWith = mockOnSelectPreset.mock.calls[0][0];
-    expect(calledWith.applications).toEqual(['global-tax-mapper-api']);
-    expect(calledWith.environment).toBe('prod');
-    expect(calledWith.excludeHealthChecks).toBe(true);
-    expect(calledWith.metricItems?.[0]?.metricType).toBe('transaction-count');
+    expect(store.get(applicationsAtom)).toEqual(['global-tax-mapper-api']);
+    expect(store.get(environmentAtom)).toBe('prod');
+    expect(store.get(excludeHealthChecksAtom)).toBe(true);
+    expect(store.get(metricItemsAtom)?.[0]?.metricType).toBe('transaction-count');
   });
 
-  it('calls onSelectPreset with all apps when All Apps button is clicked', async () => {
+  it('updates atoms with all apps when All Apps button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     await user.click(screen.getByRole('button', { name: 'All Apps Prod - Last Hour' }));
     
-    expect(mockOnSelectPreset).toHaveBeenCalledTimes(1);
-    const calledWith = mockOnSelectPreset.mock.calls[0][0];
-    expect(calledWith.applications).toEqual([
+    expect(store.get(applicationsAtom)).toEqual([
       'global-tax-mapper-api',
       'global-tax-mapper-bff', 
       'global-tax-mapper-integrator-api'
     ]);
   });
 
-  it('calls onSelectPreset with UAT environment when UAT button is clicked', async () => {
+  it('updates atoms with UAT environment when UAT button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     await user.click(screen.getByRole('button', { name: 'API UAT - Last Hour' }));
     
-    expect(mockOnSelectPreset).toHaveBeenCalledTimes(1);
-    const calledWith = mockOnSelectPreset.mock.calls[0][0];
-    expect(calledWith.environment).toBe('uat');
+    expect(store.get(environmentAtom)).toBe('uat');
   });
 
-  it('includes timePeriod in preset state', async () => {
+  it('updates timePeriod atom when preset is clicked', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     await user.click(screen.getByRole('button', { name: 'API Prod - Last Hour' }));
     
-    const calledWith = mockOnSelectPreset.mock.calls[0][0];
-    expect(calledWith.timePeriod).toBeDefined();
-    expect(calledWith.timePeriod.mode).toBeDefined();
-    expect(calledWith.timePeriod.relative).toBeDefined();
+    const timePeriod = store.get(timePeriodAtom);
+    expect(timePeriod).toBeDefined();
+    expect(timePeriod.mode).toBeDefined();
+    expect(timePeriod.relative).toBeDefined();
     // since/until are now optional and not required for relative mode
   });
 
-  it('renders exactly 7 preset buttons', () => {
-    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
+  it('renders exactly 8 preset buttons (7 presets + 1 reset)', () => {
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
     
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(7);
+    expect(buttons).toHaveLength(8);
   });
 });

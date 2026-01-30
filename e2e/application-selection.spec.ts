@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 test.describe('Application Selection', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,7 +7,7 @@ test.describe('Application Selection', () => {
   });
 
   // Helper to get query preview text
-  const getQueryPreview = (page) => page.getByRole('group', { name: 'Generated Query' });
+  const getQueryPreview = (page: Page) => page.getByRole('group', { name: 'Generated Query' });
 
   test('1.1 Default state - API checkbox is checked by default', async ({ page }) => {
     // API checkbox should be checked by default (use exact: true to avoid matching "Integrator API")

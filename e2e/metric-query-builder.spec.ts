@@ -9,14 +9,17 @@ test.describe('Metric Query Builder', () => {
   // Helper to get query preview
   const getQueryPreview = (page: Page) => page.getByRole('group', { name: 'Generated Query' });
 
-  // Helper to get metric type combobox (contains "Transaction" initially)
-  const getMetricTypeCombobox = (page: Page) => {
-    return page.getByRole('combobox').filter({ hasText: /Transaction|Duration|Response Status/ }).first();
+  // Helper to get metric type combobox by label (Metric 1, Metric 2, etc.)
+  const getMetricTypeCombobox = (page: Page, metricIndex: number = 1) => {
+    return page.getByRole('combobox', { name: `Metric ${metricIndex}` });
   };
 
-  // Helper to get aggregation combobox (contains "Count" initially, or "Average"/"95th Percentile" when Duration is selected)
-  const getAggregationCombobox = (page: Page) => {
-    return page.getByRole('combobox').filter({ hasText: /Count|Average|95th Percentile/ }).first();
+  // Helper to get aggregation combobox by label
+  // Note: There may be multiple "Aggregation" comboboxes, so we get all and filter by position
+  const getAggregationCombobox = (page: Page, metricIndex: number = 1) => {
+    const aggregationComboboxes = page.getByRole('combobox', { name: 'Aggregation' });
+    // Return the one for the specified metric (0-indexed)
+    return aggregationComboboxes.nth(metricIndex - 1);
   };
 
   test.describe('Metric Items (4.1)', () => {

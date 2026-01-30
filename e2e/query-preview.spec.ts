@@ -15,7 +15,7 @@ test.describe('Query Preview', () => {
       
       // Query should contain expected structure
       await expect(queryPreview).toContainText('FROM Transaction');
-      await expect(queryPreview).toContainText('select');
+      await expect(queryPreview).toContainText('SELECT');
       await expect(queryPreview).toContainText('WHERE');
       await expect(queryPreview).toContainText('appName in');
     });
@@ -26,8 +26,9 @@ test.describe('Query Preview', () => {
       // Should have all main clauses in correct order
       const queryText = await queryPreview.textContent();
       
-      // Verify order: FROM -> select -> WHERE -> TIMESERIES -> SINCE -> UNTIL -> FACET
-      expect(queryText).toMatch(/FROM.*select.*WHERE.*TIMESERIES.*SINCE.*UNTIL.*FACET/);
+      // Verify order: FROM -> SELECT -> WHERE -> TIMESERIES -> SINCE -> UNTIL -> FACET
+      // Use [\s\S]* to match across newlines
+      expect(queryText).toMatch(/FROM[\s\S]*SELECT[\s\S]*WHERE[\s\S]*TIMESERIES[\s\S]*SINCE[\s\S]*UNTIL[\s\S]*FACET/);
     });
 
     test('9.4 Copy button enabled with valid query', async ({ page }) => {

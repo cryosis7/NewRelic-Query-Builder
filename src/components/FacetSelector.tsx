@@ -1,3 +1,4 @@
+import { useAtom } from 'jotai';
 import {
   XUISingleSelect,
   XUISingleSelectLabel,
@@ -6,18 +7,16 @@ import {
   XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
 import { FACET_OPTIONS, type FacetOption } from '../types/query';
+import { facetAtom } from '../atoms';
 
-interface FacetSelectorProps {
-  selectedFacet: FacetOption;
-  onChange: (facet: FacetOption) => void;
-}
+export function FacetSelector() {
+  const [selectedFacet, setSelectedFacet] = useAtom(facetAtom);
 
-export function FacetSelector({ selectedFacet, onChange }: FacetSelectorProps) {
   return (
     <XUISingleSelect
       key={`facet-${selectedFacet}`}
       defaultSelectedOptionId={selectedFacet}
-      onSelect={(value) => onChange(value as FacetOption)}
+      onSelect={(value) => setSelectedFacet(value as FacetOption)}
     >
       <XUISingleSelectLabel>Facet By</XUISingleSelectLabel>
       <XUISingleSelectTrigger />

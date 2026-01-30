@@ -1,31 +1,67 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider, createStore } from 'jotai';
 import { QueryPreview } from './QueryPreview';
+import { applicationsAtom, environmentAtom, metricItemsAtom, timePeriodAtom, excludeHealthChecksAtom, useTimeseriesAtom, facetAtom } from '../atoms';
+import { createMetricItem } from '../lib/buildNrqlQuery';
 
 describe('QueryPreview', () => {
-  it('renders the Generated Query legend', () => {
-    render(<QueryPreview query="SELECT * FROM Transaction" />);
+  it('renders the query preview', () => {
+    const store = createStore();
+    // Set up minimal state to generate a valid query
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
-    expect(screen.getByText('Generated Query')).toBeInTheDocument();
+    // Query should be rendered in a pre element
+    expect(screen.getByText(/SELECT count\(\*\)/)).toBeInTheDocument();
   });
 
   it('displays the provided query text', () => {
-    const query = 'FROM Transaction select count(*)';
-    render(<QueryPreview query={query} />);
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
-    expect(screen.getByText(query)).toBeInTheDocument();
+    // Query should contain SELECT count(*)
+    expect(screen.getByText(/SELECT count\(\*\)/)).toBeInTheDocument();
   });
 
   it('renders the Copy Query button', () => {
-    render(<QueryPreview query="SELECT * FROM Transaction" />);
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
     expect(screen.getByRole('button', { name: /copy query/i })).toBeInTheDocument();
   });
 
   it('copies query to clipboard when Copy button is clicked', async () => {
     const user = userEvent.setup();
-    const query = 'FROM Transaction select count(*)';
-    render(<QueryPreview query={query} />);
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
     await user.click(screen.getByRole('button', { name: /copy query/i }));
     
@@ -38,7 +74,15 @@ describe('QueryPreview', () => {
 
   it('shows Copied! feedback after successful copy', async () => {
     const user = userEvent.setup();
-    render(<QueryPreview query="SELECT * FROM Transaction" />);
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
     await user.click(screen.getByRole('button', { name: /copy query/i }));
     
@@ -48,7 +92,15 @@ describe('QueryPreview', () => {
   it('reverts button text back to Copy Query after 2 seconds', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<QueryPreview query="SELECT * FROM Transaction" />);
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
     await user.click(screen.getByRole('button', { name: /copy query/i }));
     expect(screen.getByRole('button', { name: /copied/i })).toBeInTheDocument();
@@ -65,28 +117,61 @@ describe('QueryPreview', () => {
   });
 
   it('disables Copy button when query is invalid (starts with --)', () => {
-    render(<QueryPreview query="-- Select at least one application" />);
+    const store = createStore();
+    // Set up invalid state (no applications)
+    store.set(applicationsAtom, []);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
     expect(screen.getByRole('button', { name: /copy query/i })).toBeDisabled();
   });
 
   it('enables Copy button when query is valid', () => {
-    render(<QueryPreview query="FROM Transaction select count(*)" />);
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
     expect(screen.getByRole('button', { name: /copy query/i })).toBeEnabled();
   });
 
   it('displays invalid query with warning styling', () => {
-    render(<QueryPreview query="-- Select at least one application" />);
+    const store = createStore();
+    store.set(applicationsAtom, []);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
     const pre = screen.getByText('-- Select at least one application');
     expect(pre).toHaveStyle({ backgroundColor: '#fff3cd' });
   });
 
   it('displays valid query with standard styling', () => {
-    render(<QueryPreview query="FROM Transaction select count(*)" />);
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
     
-    const pre = screen.getByText('FROM Transaction select count(*)');
+    const pre = screen.getByText(/SELECT count\(\*\)/);
     expect(pre).toHaveStyle({ backgroundColor: '#f5f5f5' });
   });
 });

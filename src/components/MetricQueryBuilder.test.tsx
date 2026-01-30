@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { Provider, createStore } from 'jotai';
 import { MetricQueryBuilder } from './MetricQueryBuilder';
 import type { MetricQueryItem } from '../types/query';
+import { metricItemsAtom, addMetricItemAtom } from '../atoms';
+import { createMetricItem } from '../lib/buildNrqlQuery';
 
 function createItem(overrides: Partial<MetricQueryItem> = {}): MetricQueryItem {
   return {
@@ -14,52 +17,28 @@ function createItem(overrides: Partial<MetricQueryItem> = {}): MetricQueryItem {
 }
 
 describe('MetricQueryBuilder', () => {
-  const onAddItem = vi.fn();
-  const onRemoveItem = vi.fn();
-  const onUpdateItem = vi.fn();
-  const onAddFilter = vi.fn();
-  const onUpdateFilter = vi.fn();
-  const onRemoveFilter = vi.fn();
-
-  beforeEach(() => {
-    onAddItem.mockClear();
-    onRemoveItem.mockClear();
-    onUpdateItem.mockClear();
-    onAddFilter.mockClear();
-    onUpdateFilter.mockClear();
-    onRemoveFilter.mockClear();
-  });
-
   it('renders a metric item', () => {
+    const store = createStore();
+    store.set(metricItemsAtom, [createItem()]);
     render(
-      <MetricQueryBuilder
-        items={[createItem()]}
-        onAddItem={onAddItem}
-        onRemoveItem={onRemoveItem}
-        onUpdateItem={onUpdateItem}
-        onAddFilter={onAddFilter}
-        onUpdateFilter={onUpdateFilter}
-        onRemoveFilter={onRemoveFilter}
-      />
+      <Provider store={store}>
+        <MetricQueryBuilder />
+      </Provider>
     );
 
     expect(screen.getByText('Metric 1')).toBeInTheDocument();
   });
 
   it('renders a section rule separator between multiple items', () => {
+    const store = createStore();
+    store.set(metricItemsAtom, [
+      createItem({ id: 'metric-1' }),
+      createItem({ id: 'metric-2' }),
+    ]);
     render(
-      <MetricQueryBuilder
-        items={[
-          createItem({ id: 'metric-1' }),
-          createItem({ id: 'metric-2' }),
-        ]}
-        onAddItem={onAddItem}
-        onRemoveItem={onRemoveItem}
-        onUpdateItem={onUpdateItem}
-        onAddFilter={onAddFilter}
-        onUpdateFilter={onUpdateFilter}
-        onRemoveFilter={onRemoveFilter}
-      />
+      <Provider store={store}>
+        <MetricQueryBuilder />
+      </Provider>
     );
 
     const separator = screen.getByRole('separator');
@@ -67,54 +46,43 @@ describe('MetricQueryBuilder', () => {
   });
 
   it('does not render a section rule separator for a single item', () => {
+    const store = createStore();
+    store.set(metricItemsAtom, [createItem()]);
     render(
-      <MetricQueryBuilder
-        items={[createItem()]}
-        onAddItem={onAddItem}
-        onRemoveItem={onRemoveItem}
-        onUpdateItem={onUpdateItem}
-        onAddFilter={onAddFilter}
-        onUpdateFilter={onUpdateFilter}
-        onRemoveFilter={onRemoveFilter}
-      />
+      <Provider store={store}>
+        <MetricQueryBuilder />
+      </Provider>
     );
 
     const separator = screen.queryByRole('separator');
     expect(separator).not.toBeInTheDocument();
   });
 
-  it('calls onAddItem when Add metric is clicked', async () => {
+  it('adds metric item when Add metric is clicked', async () => {
     const user = userEvent.setup();
+    const store = createStore();
+    const initialItem = createItem();
+    store.set(metricItemsAtom, [initialItem]);
     render(
-      <MetricQueryBuilder
-        items={[createItem()]}
-        onAddItem={onAddItem}
-        onRemoveItem={onRemoveItem}
-        onUpdateItem={onUpdateItem}
-        onAddFilter={onAddFilter}
-        onUpdateFilter={onUpdateFilter}
-        onRemoveFilter={onRemoveFilter}
-      />
+      <Provider store={store}>
+        <MetricQueryBuilder />
+      </Provider>
     );
 
     await user.click(screen.getByRole('button', { name: /add metric/i }));
-    expect(onAddItem).toHaveBeenCalledTimes(1);
+    expect(store.get(metricItemsAtom).length).toBe(2);
   });
 
   it('renders multiple metric items', () => {
+    const store = createStore();
+    store.set(metricItemsAtom, [
+      createItem({ id: 'metric-1' }),
+      createItem({ id: 'metric-2' }),
+    ]);
     render(
-      <MetricQueryBuilder
-        items={[
-          createItem({ id: 'metric-1' }),
-          createItem({ id: 'metric-2' }),
-        ]}
-        onAddItem={onAddItem}
-        onRemoveItem={onRemoveItem}
-        onUpdateItem={onUpdateItem}
-        onAddFilter={onAddFilter}
-        onUpdateFilter={onUpdateFilter}
-        onRemoveFilter={onRemoveFilter}
-      />
+      <Provider store={store}>
+        <MetricQueryBuilder />
+      </Provider>
     );
 
     expect(screen.getByText('Metric 1')).toBeInTheDocument();

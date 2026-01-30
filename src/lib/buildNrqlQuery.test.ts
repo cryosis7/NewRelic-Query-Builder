@@ -1,4 +1,4 @@
-import { buildNrqlQuery } from './useQueryBuilder';
+import { buildNrqlQuery, createMetricItem, getInitialState } from './buildNrqlQuery';
 import type { QueryState, MetricFilter } from '../types/query';
 
 function createTestFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
@@ -84,7 +84,7 @@ describe('buildNrqlQuery', () => {
   });
 
   describe('metric types', () => {
-    it('generates select average(duration) for duration metric with average aggregation', () => {
+    it('generates SELECT average(duration) for duration metric with average aggregation', () => {
       const state = createTestState({
         metricItems: [
           {
@@ -96,11 +96,11 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select average(duration)');
+      expect(result).toContain('SELECT average(duration)');
       expect(result).not.toContain('count(*)');
     });
 
-    it('generates select count(*) for transaction-count metric type', () => {
+    it('generates SELECT count(*) for transaction-count metric type', () => {
       const state = createTestState({
         metricItems: [
           {
@@ -112,11 +112,11 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select count(*)');
+      expect(result).toContain('SELECT count(*)');
       expect(result).not.toContain('average(duration)');
     });
 
-    it('generates select percentile(duration, 95) for duration metric with p95 aggregation', () => {
+    it('generates SELECT percentile(duration, 95) for duration metric with p95 aggregation', () => {
       const state = createTestState({
         metricItems: [
           {
@@ -128,10 +128,10 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select percentile(duration, 95)');
+      expect(result).toContain('SELECT percentile(duration, 95)');
     });
 
-    it('generates select count(duration) for duration metric with count aggregation', () => {
+    it('generates SELECT count(duration) for duration metric with count aggregation', () => {
       const state = createTestState({
         metricItems: [
           {
@@ -143,10 +143,10 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select count(duration)');
+      expect(result).toContain('SELECT count(duration)');
     });
 
-    it('generates select count(response.status) for response.status metric', () => {
+    it('generates SELECT count(response.status) for response.status metric', () => {
       const state = createTestState({
         metricItems: [
           {
@@ -158,7 +158,7 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select count(response.status)');
+      expect(result).toContain('SELECT count(response.status)');
     });
   });
 
@@ -242,7 +242,7 @@ describe('buildNrqlQuery', () => {
 
       // Verify all parts are present
       expect(result).toContain('FROM Transaction');
-      expect(result).toContain('select count(*)');
+      expect(result).toContain('SELECT count(*)');
       expect(result).toContain('WHERE');
       expect(result).toContain('appName in (');
       expect(result).toContain('request.uri not in (');
@@ -331,7 +331,7 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select count(duration)');
+      expect(result).toContain('SELECT count(duration)');
       expect(result).toContain('WHERE');
       expect(result).toContain('duration > 0.5');
       expect(result).not.toContain('filter(count(duration)');
@@ -355,7 +355,7 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select filter(count(duration), where duration > 0.5), average(duration)');
+      expect(result).toContain('SELECT filter(count(duration), where duration > 0.5), average(duration)');
       expect(result).not.toContain('WHERE duration > 0.5');
     });
   });
@@ -531,13 +531,12 @@ describe('buildNrqlQuery', () => {
             aggregationType: 'count',
             filters: [
               createTestFilter({ id: 'filter-1', field: 'duration', operator: '>', value: '' }),
-              createTestFilter({ id: 'filter-2', field: 'response.status', operator: '=', value: '   ' }),
-            ],
+              createTestFilter({ id: 'filter-2', field: 'response.status', operator: '=', value: '   ' })],
           },
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select count(duration)');
+      expect(result).toContain('SELECT count(duration)');
       expect(result).not.toContain('filter(');
       expect(result).not.toContain('duration >');
       expect(result).not.toContain('response.status');
@@ -561,7 +560,7 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("filter(count(*), where response.status LIKE '4%')");
+      expect(result).toContain("SELECT filter(count(*), where response.status LIKE '4%')");
       expect(result).toContain('filter(average(duration), where duration > 1)');
     });
 
@@ -583,7 +582,7 @@ describe('buildNrqlQuery', () => {
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('select count(*), average(duration)');
+      expect(result).toContain('SELECT count(*), average(duration)');
       expect(result).toContain('response.status = 200');
       expect(result).not.toContain('filter(');
     });

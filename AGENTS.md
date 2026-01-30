@@ -190,7 +190,7 @@ describe('ComponentName', () => {
 ### Pure function test pattern
 
 ```ts
-import { buildNrqlQuery } from './useQueryBuilder';
+import { buildNrqlQuery } from '../lib/buildNrqlQuery';
 import type { QueryState } from '../types/query';
 
 function createTestState(overrides: Partial<QueryState> = {}): QueryState {

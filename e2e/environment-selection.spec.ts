@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 test.describe('Environment Selection', () => {
   test.beforeEach(async ({ page }) => {
@@ -7,7 +7,7 @@ test.describe('Environment Selection', () => {
   });
 
   // Helper to get query preview
-  const getQueryPreview = (page) => page.getByRole('group', { name: 'Generated Query' });
+  const getQueryPreview = (page: Page) => page.getByRole('group', { name: 'Generated Query' });
 
   test('2.1 Default environment - Production is selected with -prod suffix', async ({ page }) => {
     // Environment dropdown should show "Production"

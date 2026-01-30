@@ -1,3 +1,4 @@
+import { useAtom } from 'jotai';
 import XUITextInput, {XUITextInputSideElement} from '@xero/xui/react/textinput';
 import XUIControlGroup from '@xero/xui/react/controlgroup';
 import {
@@ -11,6 +12,7 @@ import XUIDateInput from '@xero/xui/react/dateinput';
 import type {TimePeriodMode} from '../types/query';
 import React from "react";
 import { Flex, FlexItem } from './layout';
+import { timePeriodAtom } from '../atoms';
 
 interface TimePickerProps {
     value: string; // Format: "HH:mm"
@@ -107,29 +109,13 @@ export function DateTimeInput({value, onChange, label, id}: DateTimeInputProps) 
     );
 }
 
-interface TimePeriodSelectorProps {
-    mode: TimePeriodMode;
-    since?: string;
-    until?: string;
-    relative: string;
-    onModeChange: (mode: TimePeriodMode) => void;
-    onSinceChange: (value: string) => void;
-    onUntilChange: (value: string) => void;
-    onRelativeChange: (value: string) => void;
-}
-
 const RELATIVE_OPTIONS = ['15m ago', '30m ago', '1h ago', '3h ago', '6h ago', '12h ago', '24h ago', '7d ago'];
 
-export function TimePeriodSelector({
-                                       mode,
-                                       since,
-                                       until,
-                                       relative,
-                                       onModeChange,
-                                       onSinceChange,
-                                       onUntilChange,
-                                       onRelativeChange,
-                                   }: TimePeriodSelectorProps) {
+export function TimePeriodSelector() {
+    const [timePeriod, setTimePeriod] = useAtom(timePeriodAtom);
+    
+    const { mode, since, until, relative } = timePeriod;
+    
     // Provide sensible defaults
     const sinceValue = since || new Date(Date.now() - 3600000).toISOString().slice(0, 16);
     const untilValue = until || new Date().toISOString().slice(0, 16);
@@ -138,6 +124,22 @@ export function TimePeriodSelector({
         ? RELATIVE_OPTIONS
         : [selectedRelativeOption, ...RELATIVE_OPTIONS];
 
+    const handleModeChange = (newMode: TimePeriodMode) => {
+        setTimePeriod(prev => ({ ...prev, mode: newMode }));
+    };
+
+    const handleSinceChange = (value: string) => {
+        setTimePeriod(prev => ({ ...prev, since: value }));
+    };
+
+    const handleUntilChange = (value: string) => {
+        setTimePeriod(prev => ({ ...prev, until: value }));
+    };
+
+    const handleRelativeChange = (value: string) => {
+        setTimePeriod(prev => ({ ...prev, relative: value }));
+    };
+
     return (
         <XUIControlGroup label="Time Period" isLockedVertical>
             <XUIRadioGroup label="Mode" isFieldLayout>
@@ -145,7 +147,7 @@ export function TimePeriodSelector({
                     name="timePeriodMode"
                     value="relative"
                     isChecked={mode === 'relative'}
-                    onChange={() => onModeChange('relative')}
+                    onChange={() => handleModeChange('relative')}
                 >
                     Relative
                 </XUIRadio>
@@ -153,7 +155,7 @@ export function TimePeriodSelector({
                     name="timePeriodMode"
                     value="absolute"
                     isChecked={mode === 'absolute'}
-                    onChange={() => onModeChange('absolute')}
+                    onChange={() => handleModeChange('absolute')}
                 >
                     Exact
                 </XUIRadio>
@@ -164,13 +166,13 @@ export function TimePeriodSelector({
                     <DateTimeInput
                         label="Since"
                         value={sinceValue}
-                        onChange={onSinceChange}
+                        onChange={handleSinceChange}
                         id="since-input"
                     />
                     <DateTimeInput
                         label="Until"
                         value={untilValue}
-                        onChange={onUntilChange}
+                        onChange={handleUntilChange}
                         id="until-input"
                     />
                 </>
@@ -181,15 +183,15 @@ export function TimePeriodSelector({
                         type="text"
                         placeholder="e.g. 3h"
                         value={relative}
-                        onChange={(e) => onRelativeChange(e.target.value)}
+                        onChange={(e) => handleRelativeChange(e.target.value)}
                         rightElement={
                             <XUITextInputSideElement type="button">
                                 <XUISingleSelect
                                     key={`relative-${selectedRelativeOption}`}
                                     defaultSelectedOptionId={RELATIVE_OPTIONS.includes(relative) ? relative : RELATIVE_OPTIONS[0]}
                                     onSelect={(value) => {
-                                        onRelativeChange(String(value));
-                                        onModeChange('relative');
+                                        handleRelativeChange(String(value));
+                                        handleModeChange('relative');
                                     }}
                                 >
                                     <XUISingleSelectTrigger/>

@@ -76,7 +76,7 @@ describe('FilterRow', () => {
     expect(screen.getByText('Operator')).toBeInTheDocument();
   });
 
-  it('shows warning for empty filter value', () => {
+  it('renders empty filter value input', () => {
     render(
       <FilterRow
         filter={createFilter({ value: '' })}
@@ -86,7 +86,8 @@ describe('FilterRow', () => {
       />
     );
 
-    expect(screen.getByText('Empty filter will be ignored')).toBeInTheDocument();
+    const input = screen.getByPlaceholderText(/e\.g\. 0\.5/i);
+    expect(input).toHaveValue('');
   });
 
   it('calls onRemove when remove button is clicked', async () => {
@@ -133,5 +134,31 @@ describe('FilterRow', () => {
     );
 
     expect(screen.getByDisplayValue('0.5')).toBeInTheDocument();
+  });
+
+  it('shows validation message when filter value is empty', () => {
+    render(
+      <FilterRow
+        filter={createFilter({ value: '' })}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+
+    expect(screen.getByText('Empty filter will be ignored')).toBeInTheDocument();
+  });
+
+  it('does not show validation message when filter value is not empty', () => {
+    render(
+      <FilterRow
+        filter={createFilter({ value: '0.5' })}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+
+    expect(screen.queryByText('Empty filter will be ignored')).not.toBeInTheDocument();
   });
 });

@@ -17,6 +17,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain request.uri not in clause
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText("request.uri not in");
       await expect(queryPreview).toContainText("/ping");
     });
@@ -29,6 +30,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should NOT contain request.uri not in clause
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).not.toContainText("request.uri not in");
     });
 
@@ -39,6 +41,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain TIMESERIES clause
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText("TIMESERIES AUTO");
     });
 
@@ -50,6 +53,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should NOT contain TIMESERIES clause
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).not.toContainText("TIMESERIES");
     });
   });
@@ -58,10 +62,12 @@ test.describe('Options, Facets, and Presets', () => {
     test('7.1 Default facet - Request URI selected with FACET clause', async ({ page }) => {
       // Facet dropdown should show Request URI
       const facetDropdown = page.getByRole('combobox', { name: 'Facet By' });
+      await expect(facetDropdown).toBeVisible();
       await expect(facetDropdown).toContainText('Request URI');
 
       // Query should contain FACET request.uri
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText("FACET request.uri");
     });
 
@@ -69,6 +75,7 @@ test.describe('Options, Facets, and Presets', () => {
       // Click facet dropdown and select Response Status
       const facetDropdown = page.getByRole('combobox', { name: 'Facet By' });
       await facetDropdown.click();
+      await page.getByRole('option', { name: 'Response Status' }).waitFor({ state: 'visible' });
       await page.getByRole('option', { name: 'Response Status' }).click();
 
       // Dropdown should show Response Status
@@ -76,6 +83,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain FACET response.status
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText("FACET response.status");
     });
 
@@ -83,10 +91,12 @@ test.describe('Options, Facets, and Presets', () => {
       // Click facet dropdown and select HTTP Method
       const facetDropdown = page.getByRole('combobox', { name: 'Facet By' });
       await facetDropdown.click();
+      await page.getByRole('option', { name: 'HTTP Method' }).waitFor({ state: 'visible' });
       await page.getByRole('option', { name: 'HTTP Method' }).click();
 
       // Query should contain FACET http.method
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText("FACET http.method");
     });
 
@@ -94,10 +104,12 @@ test.describe('Options, Facets, and Presets', () => {
       // Click facet dropdown and select Transaction Name
       const facetDropdown = page.getByRole('combobox', { name: 'Facet By' });
       await facetDropdown.click();
+      await page.getByRole('option', { name: 'Transaction Name' }).waitFor({ state: 'visible' });
       await page.getByRole('option', { name: 'Transaction Name' }).click();
 
       // Query should contain FACET name
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText("FACET name");
     });
 
@@ -105,10 +117,12 @@ test.describe('Options, Facets, and Presets', () => {
       // Click facet dropdown and select No Facet
       const facetDropdown = page.getByRole('combobox', { name: 'Facet By' });
       await facetDropdown.click();
+      await page.getByRole('option', { name: 'No Facet' }).waitFor({ state: 'visible' });
       await page.getByRole('option', { name: 'No Facet' }).click();
 
       // Query should NOT contain FACET clause
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).not.toContainText("FACET");
     });
   });
@@ -130,7 +144,7 @@ test.describe('Options, Facets, and Presets', () => {
       // Click the preset
       await page.getByRole('button', { name: 'API Prod - Last Hour' }).click();
 
-      // API should be checked, others unchecked
+      // Wait for state to update, then verify checkboxes
       await expect(page.getByRole('checkbox', { name: 'API', exact: true })).toBeChecked();
       await expect(page.getByRole('checkbox', { name: 'BFF' })).not.toBeChecked();
       await expect(page.getByRole('checkbox', { name: 'Integrator API' })).not.toBeChecked();
@@ -141,6 +155,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain api-prod
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText('global-tax-mapper-api-prod');
     });
 
@@ -155,6 +170,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain all three apps
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText('global-tax-mapper-api-prod');
       await expect(queryPreview).toContainText('global-tax-mapper-bff-prod');
       await expect(queryPreview).toContainText('global-tax-mapper-integrator-api-prod');
@@ -173,6 +189,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain api-uat
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText('global-tax-mapper-api-uat');
     });
 
@@ -186,6 +203,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain bff-prod
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText('global-tax-mapper-bff-prod');
     });
 
@@ -198,6 +216,7 @@ test.describe('Options, Facets, and Presets', () => {
 
       // Query should contain integrator-api-prod
       const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText('global-tax-mapper-integrator-api-prod');
     });
   });

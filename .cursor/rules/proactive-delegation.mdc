@@ -1,0 +1,39 @@
+---
+description: 
+alwaysApply: true
+---
+
+# Proactive Task Delegation
+
+Always delegate development tasks to subagents rather than performing them sequentially yourself.
+
+## When to Delegate
+
+- **Code changes**: Delegate implementation work to subagents
+- **Test updates**: After any coding task, delegate test updates as a follow-up task
+- **Independent tasks**: Launch multiple subagents in parallel when tasks don't depend on each other
+
+## Delegation Requirements
+
+Each delegated task must include:
+
+1. **Clear instructions**: What exactly needs to be done
+2. **Completion criteria**: How to verify the task is complete
+3. **Context**: Relevant file paths, function names, or requirements
+
+## Pattern
+
+```
+1. Receive coding task
+2. Delegate implementation to subagent(s)
+3. Delegate test updates to subagent(s)
+4. Review results
+```
+
+## Example
+
+❌ **Don't**: Perform coding and testing yourself sequentially
+
+✅ **Do**: 
+- Delegate: "Update `UserService.ts` to add validation. Complete when: function validates email format and returns error for invalid input"
+- Follow with: "Update `UserService.test.ts` to cover new validation. Complete when: tests pass for valid/invalid email cases"

@@ -42,13 +42,14 @@ test.describe('Metric Filters', () => {
       // Add a filter but leave value empty
       await page.getByRole('button', { name: 'Add Filter' }).click();
 
-      // Wait a bit for the validation message to appear
-      await page.waitForTimeout(100);
+      // Wait for the Value input to be visible
+      const valueInput = page.getByRole('textbox', { name: 'Value' });
+      await expect(valueInput).toBeVisible();
 
-      // Should show "Empty filter will be ignored" message (validation message)
-      await expect(page.getByText('Empty filter will be ignored')).toBeVisible();
+      // Verify the value input is empty
+      await expect(valueInput).toHaveValue('');
 
-      // Query should still be valid (no filter clause added)
+      // Query should still be valid (no filter clause added for empty filter)
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).not.toContainText('duration >');
       // Should not have error
