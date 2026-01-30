@@ -41,12 +41,12 @@ export function MetricQueryBuilder({
                         onUpdateFilter={onUpdateFilter}
                         onRemoveFilter={onRemoveFilter}
                     />
-                        {!isLastItem && <SectionRule />}
+                        {!isLastItem && <SectionRule/>}
                     </div>
                 );
             })}
 
-            <XUIButton variant="standard" onClick={onAddItem} fullWidth="always">
+            <XUIButton variant="standard" onClick={onAddItem} fullWidth="always" className="xui-margin-top">
                 Add metric
             </XUIButton>
         </Flex>

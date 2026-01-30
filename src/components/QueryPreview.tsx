@@ -1,13 +1,13 @@
-import {useCallback, useState} from 'react';
+import { useCallback, useState } from 'react';
 import XUIButton from '@xero/xui/react/button';
-import {Flex, FlexItem} from "./layout";
+import { Flex, FlexItem } from "./layout";
 import copy from '@xero/xui-icon/icons-es6/copy'
 
 interface QueryPreviewProps {
     query: string;
 }
 
-export function QueryPreview({query}: QueryPreviewProps) {
+export function QueryPreview({ query }: QueryPreviewProps) {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = useCallback(async () => {
@@ -24,9 +24,6 @@ export function QueryPreview({query}: QueryPreviewProps) {
 
     return (
         <Flex direction="column">
-            {/*<FlexItem>*/}
-            <label>Generated Query</label>
-            {/*</FlexItem>*/}
             <pre
                 className="xui-text-panelcontent xui-padding"
                 style={{
@@ -36,10 +33,12 @@ export function QueryPreview({query}: QueryPreviewProps) {
                     borderRadius: '4px',
                     minHeight: '100px',
                     marginBottom: '12px',
+                    fontFamily: 'SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                    fontSize: '1rem',
                 }}
             >
-        {query}
-      </pre>
+                {query}
+            </pre>
             <FlexItem>
                 <XUIButton
                     variant={!copied ? 'create' : 'standard'}

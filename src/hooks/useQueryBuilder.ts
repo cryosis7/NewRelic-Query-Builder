@@ -1,17 +1,17 @@
-import { useState, useMemo, useCallback } from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import type {
-  QueryState,
+  AggregationType,
   Application,
   Environment,
-  MetricType,
-  AggregationType,
-  TimePeriod,
   FacetOption,
-  MetricQueryItem,
-  MetricFilter,
   FilterField,
+  MetricFilter,
+  MetricQueryItem,
+  MetricType,
+  QueryState,
+  TimePeriod,
 } from '../types/query';
-import { HEALTH_CHECK_PATHS } from '../types/query';
+import {HEALTH_CHECK_PATHS} from '../types/query';
 
 function getDefaultTimePeriod(): TimePeriod {
   return {
@@ -254,7 +254,7 @@ export function buildNrqlQuery(state: QueryState): string {
   // Assemble full query
   const queryParts = [
     'FROM Transaction',
-    `select ${selectClause}`,
+    `SELECT ${selectClause}`,
     `WHERE ${whereConditions.join(' and ')}`,
   ];
 
@@ -269,9 +269,7 @@ export function buildNrqlQuery(state: QueryState): string {
     queryParts.push(`FACET ${state.facet}`);
   }
 
-  const query = queryParts.join(' ');
-
-  return query;
+  return queryParts.join(' ');
 }
 
 function buildMetricSelect(item: MetricQueryItem): string {

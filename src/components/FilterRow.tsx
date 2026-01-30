@@ -42,7 +42,7 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
     const placeholder = getPlaceholderForField(filter.field);
 
     return (
-        <Flex align="start">
+        <Flex align="start" className="xui-margin-left">
             <FlexItem alignSelf="stretch" alignContent="center">
                     <XUIIconButton
                         className="xui-padding-xsmall-bottom"

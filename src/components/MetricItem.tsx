@@ -50,7 +50,7 @@ export function MetricItem({
         : AGGREGATION_TYPES.filter((aggregation) => aggregation.value === 'count');
 
     return (
-        <Flex justify="start" align="center" debug>
+        <Flex justify="start" align="center">
             <FlexItem className="xui-padding-horizontal">
                 <XUISingleSelect
                     key={`${item.id}-metricType-${item.metricType}`}
@@ -110,21 +110,20 @@ export function MetricItem({
                                 onUpdate={onUpdateFilter}
                                 onRemove={onRemoveFilter}
                             />
-                            {index + 1 != item.filters.length && (<SectionRule />)}
+                            {index + 1 != item.filters.length && (<SectionRule/>)}
                         </div>
                     ))}
                 </FlexItem>
             )}
 
             {!isSingleItem && (
-                <FlexItem grow debug className="xui-margin-left">
-                    <XUIButton
-                        variant="negative"
-                        onClick={() => onRemoveItem(item.id)}
-                    >
-                        Remove
-                    </XUIButton>
-                </FlexItem>
+                <XUIButton
+                    style={{marginLeft: 'auto'}}
+                    variant="negative"
+                    onClick={() => onRemoveItem(item.id)}
+                >
+                    Remove
+                </XUIButton>
             )}
         </Flex>
     );

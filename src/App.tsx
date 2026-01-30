@@ -1,19 +1,17 @@
 import {useQueryBuilder} from './hooks/useQueryBuilder';
 import {
     ApplicationSelector,
-    EnvironmentSelector,
-    MetricQueryBuilder,
-    TimePeriodSelector,
-    HealthCheckToggle,
     CommonQueriesPanelSection,
-    QueryPreview,
+    EnvironmentSelector,
     FacetSelector,
     Flex,
     FlexItem,
+    HealthCheckToggle,
+    MetricQueryBuilder,
+    QueryPreview,
+    TimePeriodSelector,
 } from './components';
-import {XUIPageHeader} from "@xero/xui/react/pageheader";
 import XUIPanel, {
-    XUIPanelFooter,
     XUIPanelHeader,
     XUIPanelHeading,
     XUIPanelSection,
@@ -42,18 +40,16 @@ function App() {
         applyPreset,
     } = useQueryBuilder();
 
-    const header = (<XUIPanelHeader><XUIPanelHeading headingLevel={1}>New Relic Query
-        Builder</XUIPanelHeading>
-    </XUIPanelHeader>)
-    const footer = (<XUIPanelFooter><QueryPreview query={query}/></XUIPanelFooter>)
+    const header = (
+        <XUIPanelHeader>
+            <XUIPanelHeading headingLevel={1}>New Relic Query Builder</XUIPanelHeading>
+        </XUIPanelHeader>
+    )
 
     return (
         <div className="xui-page-width-large xui-padding-large">
-            {/*<XUIPageHeader title="New Relic Query Builder" className="xui-margin-bottom"/>*/}
-
             <XUIPanel
                 header={header}
-                footer={footer}
             >
                 <CommonQueriesPanelSection onSelectPreset={applyPreset}/>
 
@@ -101,29 +97,35 @@ function App() {
                         onRemoveFilter={removeFilter}
                     />
                 </XUIPanelSection>
+
+                <XUIPanelSection className="xui-padding-large">
+                    <XUIPanelSectionHeading headingLevel={2}>View Options</XUIPanelSectionHeading>
+
+                    <Flex gap="1rem" className="xui-margin-top">
+                        <FlexItem flex={1}>
+                            <HealthCheckToggle
+                                isExcluded={state.excludeHealthChecks}
+                                onChange={setExcludeHealthChecks}
+                                useTimeseries={state.useTimeseries}
+                                onTimeseriesChange={setUseTimeseries}
+                            />
+                        </FlexItem>
+                        <FlexItem flex={1}>
+                            <FacetSelector
+                                selectedFacet={state.facet}
+                                onChange={setFacet}
+                            />
+                        </FlexItem>
+                    </Flex>
+                </XUIPanelSection>
+
+
+                <XUIPanelSection className="xui-padding-large">
+                    <XUIPanelSectionHeading headingLevel={2}>NewRelic Query</XUIPanelSectionHeading>
+                    <QueryPreview query={query}/>
+                </XUIPanelSection>
             </XUIPanel>
 
-
-            <Flex gap="1rem" className="xui-margin-top">
-                <FlexItem flex={1}>
-                    <HealthCheckToggle
-                        isExcluded={state.excludeHealthChecks}
-                        onChange={setExcludeHealthChecks}
-                        useTimeseries={state.useTimeseries}
-                        onTimeseriesChange={setUseTimeseries}
-                    />
-                </FlexItem>
-                <FlexItem flex={1}>
-                    <FacetSelector
-                        selectedFacet={state.facet}
-                        onChange={setFacet}
-                    />
-                </FlexItem>
-            </Flex>
-
-            <div className="xui-margin-top-large">
-                <QueryPreview query={query}/>
-            </div>
         </div>
     );
 }
