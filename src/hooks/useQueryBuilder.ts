@@ -269,7 +269,7 @@ export function buildNrqlQuery(state: QueryState): string {
     queryParts.push(`FACET ${state.facet}`);
   }
 
-  return queryParts.join(' ');
+  return queryParts.join('\n');
 }
 
 function buildMetricSelect(item: MetricQueryItem): string {
