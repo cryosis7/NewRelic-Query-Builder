@@ -5,27 +5,26 @@ export type Application =
 
 export type Environment = 'prod' | 'uat';
 
-export type MetricType = 
-  | 'duration'
-  | 'transaction-count'
-  | 'response.status';
+export type FieldDataType = 'numeric' | 'string';
+
+export interface NrqlField {
+  name: string;           // NRQL field name (e.g., 'duration')
+  label: string;          // Display label
+  dataType: FieldDataType;
+  canAggregate: boolean;  // Supports average/percentile (numeric only)
+  canFacet: boolean;      // Can be used in FACET clause
+}
 
 export type AggregationType =
   | 'count'
   | 'average'
   | 'p95';
 
-export type MetricFilterOperator = '>' | '>=' | '<' | '<=' | '=' | 'LIKE' | 'IN';
+export type NumericOperator = '>' | '>=' | '<' | '<=' | '=';
+export type StringOperator = '=' | 'IN';
+export type MetricFilterOperator = NumericOperator | StringOperator;
 
-/** Filter field types - all metric types except transaction-count */
-export type FilterField = 'duration' | 'response.status';
-
-export type FacetOption = 
-  | 'none'
-  | 'request.uri'
-  | 'response.status'
-  | 'http.method'
-  | 'name';
+export type FacetOption = 'none' | string;
 export type TimePeriodMode = 'absolute' | 'relative';
 
 export interface TimePeriod {
@@ -47,14 +46,15 @@ export interface QueryState {
 
 export interface MetricFilter {
   id: string;
-  field: FilterField;
+  field: string;
   operator: MetricFilterOperator;
   value: string;
+  negated: boolean;
 }
 
 export interface MetricQueryItem {
   id: string;
-  metricType: MetricType;
+  field: string;
   aggregationType: AggregationType;
   filters: MetricFilter[];
 }
@@ -70,10 +70,21 @@ export const ENVIRONMENTS: { value: Environment; label: string }[] = [
   { value: 'uat', label: 'UAT' },
 ];
 
-export const METRIC_TYPES: { value: MetricType; label: string }[] = [
-  { value: 'duration', label: 'Duration' },
-  { value: 'transaction-count', label: 'Transaction' },
-  { value: 'response.status', label: 'Response Status' },
+// Core NRQL field definitions
+export const NRQL_FIELDS: NrqlField[] = [
+  { name: 'duration', label: 'Duration', dataType: 'numeric', canAggregate: true, canFacet: false },
+  { name: 'response.status', label: 'Response Status', dataType: 'string', canAggregate: false, canFacet: true },
+  { name: 'request.uri', label: 'Request URI', dataType: 'string', canAggregate: false, canFacet: true },
+  { name: 'http.method', label: 'HTTP Method', dataType: 'string', canAggregate: false, canFacet: true },
+  { name: 'name', label: 'Transaction Name', dataType: 'string', canAggregate: false, canFacet: true },
+];
+
+// Derived constants from NRQL_FIELDS
+export const METRIC_FIELDS = NRQL_FIELDS.map(f => ({ value: f.name, label: f.label }));
+export const FILTER_FIELDS = NRQL_FIELDS.map(f => ({ value: f.name, label: f.label }));
+export const FACET_OPTIONS: { value: FacetOption; label: string }[] = [
+  { value: 'none', label: 'No Facet' },
+  ...NRQL_FIELDS.filter(f => f.canFacet).map(f => ({ value: f.name, label: f.label })),
 ];
 
 export const AGGREGATION_TYPES: { value: AggregationType; label: string }[] = [
@@ -82,28 +93,29 @@ export const AGGREGATION_TYPES: { value: AggregationType; label: string }[] = [
   { value: 'p95', label: '95th Percentile' },
 ];
 
-export const METRIC_FILTER_OPERATORS: { value: MetricFilterOperator; label: string }[] = [
+export const NUMERIC_OPERATORS: { value: NumericOperator; label: string }[] = [
   { value: '>', label: '>' },
   { value: '>=', label: '>=' },
   { value: '<', label: '<' },
   { value: '<=', label: '<=' },
   { value: '=', label: '=' },
-  { value: 'LIKE', label: 'LIKE' },
+];
+
+export const STRING_OPERATORS: { value: StringOperator; label: string }[] = [
+  { value: '=', label: '=' },
   { value: 'IN', label: 'IN' },
 ];
 
-export const FILTER_FIELDS: { value: FilterField; label: string }[] = [
-  { value: 'duration', label: 'Duration' },
-  { value: 'response.status', label: 'Response Status' },
-];
+// Helper function to get field definition by name
+export function getFieldByName(fieldName: string): NrqlField | undefined {
+  return NRQL_FIELDS.find(f => f.name === fieldName);
+}
 
-export const FACET_OPTIONS: { value: FacetOption; label: string }[] = [
-  { value: 'none', label: 'No Facet' },
-  { value: 'request.uri', label: 'Request URI' },
-  { value: 'response.status', label: 'Response Status' },
-  { value: 'http.method', label: 'HTTP Method' },
-  { value: 'name', label: 'Transaction Name' },
-];
+// Helper function to get operators for a field
+export function getOperatorsForField(fieldName: string): { value: MetricFilterOperator; label: string }[] {
+  const field = getFieldByName(fieldName);
+  return field?.dataType === 'numeric' ? NUMERIC_OPERATORS : STRING_OPERATORS;
+}
 
 export const HEALTH_CHECK_PATHS = [
   '/ping',

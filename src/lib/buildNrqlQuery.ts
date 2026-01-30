@@ -1,13 +1,11 @@
 import type {
   AggregationType,
-  FilterField,
   MetricFilter,
   MetricQueryItem,
-  MetricType,
   QueryState,
   TimePeriod,
 } from '../types/query';
-import {HEALTH_CHECK_PATHS} from '../types/query';
+import {HEALTH_CHECK_PATHS, getFieldByName} from '../types/query';
 
 export function getDefaultTimePeriod(): TimePeriod {
   return {
@@ -20,16 +18,12 @@ export function getInitialState(): QueryState {
   return {
     applications: ['global-tax-mapper-api'],
     environment: 'prod',
-    metricItems: [createMetricItem('transaction-count', 'count')],
+    metricItems: [createMetricItem('duration', 'count')],
     timePeriod: getDefaultTimePeriod(),
     excludeHealthChecks: true,
     useTimeseries: true,
     facet: 'request.uri',
   };
-}
-
-function isDurationMetric(metricType: MetricType): boolean {
-  return metricType === 'duration';
 }
 
 export function generateId(): string {
@@ -39,26 +33,29 @@ export function generateId(): string {
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-export function createMetricFilter(field: FilterField = 'duration'): MetricFilter {
+export function createMetricFilter(field: string = 'duration'): MetricFilter {
+  const fieldDef = getFieldByName(field);
   return {
     id: generateId(),
     field,
-    operator: field === 'response.status' ? '=' : '>',
+    operator: fieldDef?.dataType === 'string' ? '=' : '>',
     value: '',
+    negated: false,
   };
 }
 
-export function createMetricItem(metricType: MetricType, aggregationType: AggregationType): MetricQueryItem {
+export function createMetricItem(field: string, aggregationType: AggregationType): MetricQueryItem {
   return {
     id: generateId(),
-    metricType,
-    aggregationType: normalizeAggregationForMetric(metricType, aggregationType),
+    field,
+    aggregationType: normalizeAggregationForMetric(field, aggregationType),
     filters: [],
   };
 }
 
-function normalizeAggregationForMetric(metricType: MetricType, aggregationType: AggregationType): AggregationType {
-  return isDurationMetric(metricType) ? aggregationType : 'count';
+function normalizeAggregationForMetric(field: string, aggregationType: AggregationType): AggregationType {
+  const fieldDef = getFieldByName(field);
+  return fieldDef?.canAggregate ? aggregationType : 'count';
 }
 
 function normalizeFuzzyStatusCode(value: string): string {
@@ -83,18 +80,21 @@ function parseStatusFilterValue(value: string): { exact: string[], fuzzy: string
   return { exact, fuzzy };
 }
 
-function buildStatusFilterCondition(value: string): string {
+function buildStatusFilterCondition(value: string, negated: boolean = false): string {
   const { exact, fuzzy } = parseStatusFilterValue(value);
   const conditions: string[] = [];
 
   if (exact.length === 1) {
-    conditions.push(`response.status = ${exact[0]}`);
+    const operator = negated ? '!=' : '=';
+    conditions.push(`response.status ${operator} ${exact[0]}`);
   } else if (exact.length > 1) {
-    conditions.push(`response.status IN (${exact.join(', ')})`);
+    const operator = negated ? 'NOT IN' : 'IN';
+    conditions.push(`response.status ${operator} (${exact.join(', ')})`);
   }
 
   for (const pattern of fuzzy) {
-    conditions.push(`response.status LIKE '${pattern}'`);
+    const operator = negated ? 'NOT LIKE' : 'LIKE';
+    conditions.push(`response.status ${operator} '${pattern}'`);
   }
 
   if (conditions.length === 1) {
@@ -112,12 +112,52 @@ function buildSingleFilterCondition(filter: MetricFilter): string | null {
     return null; // Empty filter value - skip it
   }
 
-  if (filter.field === 'response.status') {
-    return buildStatusFilterCondition(value);
+  const fieldDef = getFieldByName(filter.field);
+  
+  // For string fields, use smart matching
+  if (fieldDef?.dataType === 'string') {
+    // Special handling for response.status with fuzzy matching
+    if (filter.field === 'response.status') {
+      return buildStatusFilterCondition(value, filter.negated);
+    }
+    // For other string fields, handle negation
+    let operator: string = filter.operator;
+    if (filter.negated) {
+      if (operator === '=') {
+        operator = '!=';
+      } else if (operator === 'IN') {
+        operator = 'NOT IN';
+      }
+    }
+    // For IN/NOT IN operators, wrap value in parentheses
+    if (operator === 'IN' || operator === 'NOT IN') {
+      return `${filter.field} ${operator} (${value})`;
+    }
+    return `${filter.field} ${operator} ${value}`;
   }
 
-  // For duration field, use the operator directly
-  return `${filter.field} ${filter.operator} ${value}`;
+  // For numeric fields, handle negation
+  let operator: string = filter.operator;
+  if (filter.negated) {
+    switch (operator) {
+      case '=':
+        operator = '!=';
+        break;
+      case '>':
+        operator = '<=';
+        break;
+      case '>=':
+        operator = '<';
+        break;
+      case '<':
+        operator = '>=';
+        break;
+      case '<=':
+        operator = '>';
+        break;
+    }
+  }
+  return `${filter.field} ${operator} ${value}`;
 }
 
 function buildFilterConditions(filters: MetricFilter[]): string[] {
@@ -201,7 +241,7 @@ export function buildNrqlQuery(state: QueryState): string {
     }
 
     if (conditions.length > 0) {
-      return `filter(${baseSelect}, where ${conditions.join(' and ')})`;
+      return `filter(${baseSelect}, WHERE ${conditions.join(' AND ')})`;
     }
 
     return baseSelect;
@@ -215,11 +255,11 @@ export function buildNrqlQuery(state: QueryState): string {
     .join(', ');
 
   // Build WHERE clause
-  const whereConditions: string[] = [`appName in (${appNames})`];
+  const whereConditions: string[] = [`appName IN (${appNames})`];
 
   if (state.excludeHealthChecks) {
     const paths = HEALTH_CHECK_PATHS.map(p => `'${p}'`).join(', ');
-    whereConditions.push(`request.uri not in (${paths})`);
+    whereConditions.push(`request.uri NOT IN (${paths})`);
   }
 
   if (canLiftItemFilters && sharedItemFilters.length > 0) {
@@ -251,7 +291,7 @@ export function buildNrqlQuery(state: QueryState): string {
   const queryParts = [
     'FROM Transaction',
     `SELECT ${selectClause}`,
-    `WHERE ${whereConditions.join(' and ')}`,
+    `WHERE ${whereConditions.join(' AND ')}`,
   ];
 
   if (state.useTimeseries) {
@@ -269,20 +309,16 @@ export function buildNrqlQuery(state: QueryState): string {
 }
 
 function buildMetricSelect(item: MetricQueryItem): string {
-  if (isDurationMetric(item.metricType)) {
-    switch (item.aggregationType) {
-      case 'average':
-        return 'average(duration)';
-      case 'p95':
-        return 'percentile(duration, 95)';
-      case 'count':
-        return 'count(duration)';
-    }
+  const fieldDef = getFieldByName(item.field);
+  
+  switch (item.aggregationType) {
+    case 'average':
+      return `average(${item.field})`;
+    case 'p95':
+      return `percentile(${item.field}, 95)`;
+    case 'count':
+      return `count(${item.field})`;
   }
-
-  if (item.metricType === 'response.status') {
-    return 'count(response.status)';
-  }
-
-  return 'count(*)';
+  
+  return `count(${item.field})`;
 }

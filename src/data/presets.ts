@@ -26,7 +26,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricItems: [
         {
           id: 'preset-api-prod-1h',
-          metricType: 'transaction-count',
+          field: 'duration',
           aggregationType: 'count',
           filters: [],
         },
@@ -46,7 +46,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricItems: [
         {
           id: 'preset-all-apps-prod-1h',
-          metricType: 'transaction-count',
+          field: 'duration',
           aggregationType: 'count',
           filters: [],
         },
@@ -66,7 +66,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricItems: [
         {
           id: 'preset-api-uat-1h',
-          metricType: 'transaction-count',
+          field: 'duration',
           aggregationType: 'count',
           filters: [],
         },
@@ -86,7 +86,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricItems: [
         {
           id: 'preset-bff-prod-24h',
-          metricType: 'transaction-count',
+          field: 'duration',
           aggregationType: 'count',
           filters: [],
         },
@@ -106,7 +106,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricItems: [
         {
           id: 'preset-integrator-prod-1h',
-          metricType: 'transaction-count',
+          field: 'duration',
           aggregationType: 'count',
           filters: [],
         },
@@ -126,7 +126,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricItems: [
         {
           id: 'preset-gtm-latency-3h',
-          metricType: 'duration',
+          field: 'duration',
           aggregationType: 'average',
           filters: [],
         },
@@ -147,13 +147,13 @@ export const QUERY_PRESETS: QueryPreset[] = [
       metricItems: [
         {
           id: 'preset-api-throughput-total',
-          metricType: 'transaction-count',
+          field: 'duration',
           aggregationType: 'count',
           filters: [],
         },
         {
           id: 'preset-api-throughput-2xx',
-          metricType: 'response.status',
+          field: 'response.status',
           aggregationType: 'count',
           filters: [
             {
@@ -161,18 +161,20 @@ export const QUERY_PRESETS: QueryPreset[] = [
               field: 'response.status',
               operator: '>=',
               value: '200',
+              negated: false,
             },
             {
               id: 'filter-2xx-upper',
               field: 'response.status',
               operator: '<',
               value: '300',
+              negated: false,
             },
           ],
         },
         {
           id: 'preset-api-throughput-4xx',
-          metricType: 'response.status',
+          field: 'response.status',
           aggregationType: 'count',
           filters: [
             {
@@ -180,18 +182,20 @@ export const QUERY_PRESETS: QueryPreset[] = [
               field: 'response.status',
               operator: '>=',
               value: '400',
+              negated: false,
             },
             {
               id: 'filter-4xx-upper',
               field: 'response.status',
               operator: '<',
               value: '500',
+              negated: false,
             },
           ],
         },
         {
           id: 'preset-api-throughput-5xx',
-          metricType: 'response.status',
+          field: 'response.status',
           aggregationType: 'count',
           filters: [
             {
@@ -199,12 +203,14 @@ export const QUERY_PRESETS: QueryPreset[] = [
               field: 'response.status',
               operator: '>=',
               value: '500',
+              negated: false,
             },
             {
               id: 'filter-5xx-upper',
               field: 'response.status',
               operator: '<',
               value: '600',
+              negated: false,
             },
           ],
         },

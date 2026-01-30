@@ -58,7 +58,7 @@ describe('CommonQueriesPanel', () => {
     expect(store.get(applicationsAtom)).toEqual(['global-tax-mapper-api']);
     expect(store.get(environmentAtom)).toBe('prod');
     expect(store.get(excludeHealthChecksAtom)).toBe(true);
-    expect(store.get(metricItemsAtom)?.[0]?.metricType).toBe('transaction-count');
+    expect(store.get(metricItemsAtom)?.[0]?.field).toBe('duration');
   });
 
   it('updates atoms with all apps when All Apps button is clicked', async () => {

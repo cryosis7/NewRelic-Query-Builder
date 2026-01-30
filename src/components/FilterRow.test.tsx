@@ -9,6 +9,7 @@ function createFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
     field: 'duration',
     operator: '>',
     value: '',
+    negated: false,
     ...overrides,
   };
 }
@@ -50,23 +51,10 @@ describe('FilterRow', () => {
     expect(input).toBeInTheDocument();
   });
 
-  it('hides operator dropdown for response.status field', () => {
+  it('shows operator dropdown for all fields', () => {
     render(
       <FilterRow
         filter={createFilter({ field: 'response.status', value: '' })}
-        metricItemId="metric-1"
-        onUpdate={onUpdate}
-        onRemove={onRemove}
-      />
-    );
-
-    expect(screen.queryByText('Operator')).not.toBeInTheDocument();
-  });
-
-  it('shows operator dropdown for duration field', () => {
-    render(
-      <FilterRow
-        filter={createFilter({ field: 'duration', value: '' })}
         metricItemId="metric-1"
         onUpdate={onUpdate}
         onRemove={onRemove}
@@ -136,7 +124,7 @@ describe('FilterRow', () => {
     expect(screen.getByDisplayValue('0.5')).toBeInTheDocument();
   });
 
-  it('shows validation message when filter value is empty', () => {
+  it('renders filter value input when value is empty', () => {
     render(
       <FilterRow
         filter={createFilter({ value: '' })}
@@ -146,10 +134,11 @@ describe('FilterRow', () => {
       />
     );
 
-    expect(screen.getByText('Empty filter will be ignored')).toBeInTheDocument();
+    const input = screen.getByLabelText('Value');
+    expect(input).toHaveValue('');
   });
 
-  it('does not show validation message when filter value is not empty', () => {
+  it('renders filter value input when value is not empty', () => {
     render(
       <FilterRow
         filter={createFilter({ value: '0.5' })}
@@ -159,6 +148,55 @@ describe('FilterRow', () => {
       />
     );
 
-    expect(screen.queryByText('Empty filter will be ignored')).not.toBeInTheDocument();
+    const input = screen.getByLabelText('Value');
+    expect(input).toHaveValue('0.5');
+  });
+
+  it('renders NOT toggle button', () => {
+    render(
+      <FilterRow
+        filter={createFilter()}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+
+    const toggleButton = screen.getByRole('button', { name: /toggle not/i });
+    expect(toggleButton).toBeInTheDocument();
+  });
+
+  it('calls onUpdate with negated toggle when NOT button is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <FilterRow
+        filter={createFilter({ negated: false })}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+
+    const toggleButton = screen.getByRole('button', { name: /toggle not/i });
+    await user.click(toggleButton);
+
+    expect(onUpdate).toHaveBeenCalledWith('metric-1', 'filter-1', { negated: true });
+  });
+
+  it('toggles negated from true to false when NOT button is clicked', async () => {
+    const user = userEvent.setup();
+    render(
+      <FilterRow
+        filter={createFilter({ negated: true })}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+
+    const toggleButton = screen.getByRole('button', { name: /toggle not/i });
+    await user.click(toggleButton);
+
+    expect(onUpdate).toHaveBeenCalledWith('metric-1', 'filter-1', { negated: false });
   });
 });

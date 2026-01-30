@@ -1,15 +1,17 @@
 import { atom } from 'jotai';
-import type { MetricQueryItem, MetricFilter, FilterField, MetricType, AggregationType } from '../types/query';
+import type { MetricQueryItem, MetricFilter, AggregationType } from '../types/query';
 import { createMetricItem, createMetricFilter } from '../lib/buildNrqlQuery';
+import { getFieldByName } from '../types/query';
 
-// Helper function to normalize aggregation based on metric type
-function normalizeAggregationForMetric(metricType: MetricType, aggregationType: AggregationType): AggregationType {
-  return metricType === 'duration' ? aggregationType : 'count';
+// Helper function to normalize aggregation based on field type
+function normalizeAggregationForMetric(field: string, aggregationType: AggregationType): AggregationType {
+  const fieldDef = getFieldByName(field);
+  return fieldDef?.canAggregate ? aggregationType : 'count';
 }
 
 // Base atom for metric items
 export const metricItemsAtom = atom<MetricQueryItem[]>([
-  createMetricItem('transaction-count', 'count'),
+  createMetricItem('duration', 'count'),
 ]);
 
 // Write-only action atom to add a new metric item
@@ -17,7 +19,7 @@ export const addMetricItemAtom = atom(
   null,
   (get, set) => {
     const current = get(metricItemsAtom);
-    set(metricItemsAtom, [...current, createMetricItem('transaction-count', 'count')]);
+    set(metricItemsAtom, [...current, createMetricItem('duration', 'count')]);
   }
 );
 
@@ -33,16 +35,16 @@ export const updateMetricItemAtom = atom(
           return item;
         }
 
-        const updatedMetricType = updates.metricType ?? item.metricType;
+        const updatedField = updates.field ?? item.field;
         const updatedAggregationType = normalizeAggregationForMetric(
-          updatedMetricType,
+          updatedField,
           updates.aggregationType ?? item.aggregationType
         );
 
         return {
           ...item,
           ...updates,
-          metricType: updatedMetricType,
+          field: updatedField,
           aggregationType: updatedAggregationType,
         };
       })
@@ -62,7 +64,7 @@ export const removeMetricItemAtom = atom(
 // Write-only action atom to add a filter to a metric item
 export const addFilterAtom = atom(
   null,
-  (get, set, { metricItemId, field }: { metricItemId: string; field?: FilterField }) => {
+  (get, set, { metricItemId, field }: { metricItemId: string; field?: string }) => {
     const current = get(metricItemsAtom);
     set(
       metricItemsAtom,
@@ -99,8 +101,9 @@ export const updateFilterAtom = atom(
             // When field changes, reset operator to appropriate default
             const newField = updates.field ?? filter.field;
             const operatorNeedsReset = updates.field && updates.field !== filter.field;
+            const fieldDef = getFieldByName(newField);
             const newOperator = operatorNeedsReset
-              ? (newField === 'response.status' ? '=' : '>')
+              ? (fieldDef?.dataType === 'string' ? '=' : '>')
               : (updates.operator ?? filter.operator);
             return {
               ...filter,

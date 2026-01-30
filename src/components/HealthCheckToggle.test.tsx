@@ -21,7 +21,7 @@ describe('QueryOptions', () => {
     store.set(excludeHealthChecksAtom, true);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -33,7 +33,7 @@ describe('QueryOptions', () => {
     store.set(excludeHealthChecksAtom, false);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -46,7 +46,7 @@ describe('QueryOptions', () => {
     store.set(excludeHealthChecksAtom, true);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -60,7 +60,7 @@ describe('QueryOptions', () => {
     store.set(excludeHealthChecksAtom, false);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -73,7 +73,7 @@ describe('QueryOptions', () => {
     store.set(excludeHealthChecksAtom, true);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -86,7 +86,7 @@ describe('QueryOptions', () => {
     store.set(excludeHealthChecksAtom, false);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -97,7 +97,7 @@ describe('QueryOptions', () => {
     const store = createStore();
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -109,7 +109,7 @@ describe('QueryOptions', () => {
     store.set(useTimeseriesAtom, true);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -121,7 +121,7 @@ describe('QueryOptions', () => {
     store.set(useTimeseriesAtom, true);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -133,7 +133,7 @@ describe('QueryOptions', () => {
     store.set(useTimeseriesAtom, false);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -146,7 +146,7 @@ describe('QueryOptions', () => {
     store.set(useTimeseriesAtom, true);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 
@@ -160,7 +160,7 @@ describe('QueryOptions', () => {
     store.set(useTimeseriesAtom, false);
     render(
       <Provider store={store}>
-        <HealthCheckToggle />
+        <QueryOptions />
       </Provider>
     );
 

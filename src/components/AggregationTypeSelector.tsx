@@ -5,16 +5,12 @@ import {
   XUISingleSelectOptions,
   XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
-import { AGGREGATION_TYPES, type AggregationType, type MetricType } from '../types/query';
+import { AGGREGATION_TYPES, type AggregationType, getFieldByName } from '../types/query';
 
 interface AggregationTypeSelectorProps {
-  metricType: MetricType;
+  metricType: string;
   selectedAggregationType: AggregationType;
   onChange: (aggregationType: AggregationType) => void;
-}
-
-function isDurationMetric(metricType: MetricType): boolean {
-  return metricType === 'duration';
 }
 
 export function AggregationTypeSelector({
@@ -22,7 +18,8 @@ export function AggregationTypeSelector({
   selectedAggregationType,
   onChange,
 }: AggregationTypeSelectorProps) {
-  const allowsDurationAggregations = isDurationMetric(metricType);
+  const fieldDef = getFieldByName(metricType);
+  const allowsDurationAggregations = fieldDef?.canAggregate ?? false;
   const availableAggregations = allowsDurationAggregations
     ? AGGREGATION_TYPES
     : AGGREGATION_TYPES.filter(({ value }) => value === 'count');
@@ -38,7 +35,7 @@ export function AggregationTypeSelector({
     >
       <XUISingleSelectLabel>Aggregation Type</XUISingleSelectLabel>
       <XUISingleSelectTrigger />
-      <XUISingleSelectOptions matchTriggerWidth>
+      <XUISingleSelectOptions matchTriggerWidth={false}>
         {availableAggregations.map(({ value, label }) => (
           <XUISingleSelectOption key={value} id={value}>
             {label}

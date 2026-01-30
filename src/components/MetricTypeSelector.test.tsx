@@ -13,7 +13,7 @@ describe('MetricTypeSelector', () => {
     const user = userEvent.setup();
     render(
       <MetricTypeSelector
-        selectedMetricType="transaction-count"
+        selectedMetricType="duration"
         onChange={mockOnChange}
       />
     );
@@ -22,15 +22,15 @@ describe('MetricTypeSelector', () => {
     await user.click(screen.getByRole('combobox'));
 
     expect(screen.getByRole('option', { name: 'Duration' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Transaction' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Response Status' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Request URI' })).toBeInTheDocument();
   });
 
   it('calls onChange with duration when that option is clicked', async () => {
     const user = userEvent.setup();
     render(
       <MetricTypeSelector
-        selectedMetricType="transaction-count"
+        selectedMetricType="response.status"
         onChange={mockOnChange}
       />
     );
@@ -41,7 +41,7 @@ describe('MetricTypeSelector', () => {
     expect(mockOnChange).toHaveBeenCalledWith('duration');
   });
 
-  it('calls onChange with count when that option is clicked', async () => {
+  it('calls onChange with request.uri when that option is clicked', async () => {
     const user = userEvent.setup();
     render(
       <MetricTypeSelector
@@ -52,15 +52,15 @@ describe('MetricTypeSelector', () => {
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
-    await user.click(screen.getByRole('option', { name: 'Transaction' }));
-    expect(mockOnChange).toHaveBeenCalledWith('transaction-count');
+    await user.click(screen.getByRole('option', { name: 'Request URI' }));
+    expect(mockOnChange).toHaveBeenCalledWith('request.uri');
   });
 
   it('calls onChange with response.status when that option is clicked', async () => {
     const user = userEvent.setup();
     render(
       <MetricTypeSelector
-        selectedMetricType="transaction-count"
+        selectedMetricType="duration"
         onChange={mockOnChange}
       />
     );
@@ -74,7 +74,7 @@ describe('MetricTypeSelector', () => {
   it('renders the Metric Type legend', () => {
     render(
       <MetricTypeSelector
-        selectedMetricType="transaction-count"
+        selectedMetricType="duration"
         onChange={mockOnChange}
       />
     );

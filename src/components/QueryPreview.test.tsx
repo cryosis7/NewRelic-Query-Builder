@@ -11,7 +11,7 @@ describe('QueryPreview', () => {
     // Set up minimal state to generate a valid query
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -19,29 +19,29 @@ describe('QueryPreview', () => {
     );
     
     // Query should be rendered in a pre element
-    expect(screen.getByText(/SELECT count\(\*\)/)).toBeInTheDocument();
+    expect(screen.getByText(/SELECT count\(duration\)/)).toBeInTheDocument();
   });
 
   it('displays the provided query text', () => {
     const store = createStore();
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
       </Provider>
     );
     
-    // Query should contain SELECT count(*)
-    expect(screen.getByText(/SELECT count\(\*\)/)).toBeInTheDocument();
+    // Query should contain SELECT count(duration)
+    expect(screen.getByText(/SELECT count\(duration\)/)).toBeInTheDocument();
   });
 
   it('renders the Copy Query button', () => {
     const store = createStore();
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -56,7 +56,7 @@ describe('QueryPreview', () => {
     const store = createStore();
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -77,7 +77,7 @@ describe('QueryPreview', () => {
     const store = createStore();
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -95,7 +95,7 @@ describe('QueryPreview', () => {
     const store = createStore();
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -121,7 +121,7 @@ describe('QueryPreview', () => {
     // Set up invalid state (no applications)
     store.set(applicationsAtom, []);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -135,7 +135,7 @@ describe('QueryPreview', () => {
     const store = createStore();
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -149,7 +149,7 @@ describe('QueryPreview', () => {
     const store = createStore();
     store.set(applicationsAtom, []);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
@@ -164,14 +164,14 @@ describe('QueryPreview', () => {
     const store = createStore();
     store.set(applicationsAtom, ['global-tax-mapper-api']);
     store.set(environmentAtom, 'prod');
-    store.set(metricItemsAtom, [createMetricItem('transaction-count', 'count')]);
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
     render(
       <Provider store={store}>
         <QueryPreview />
       </Provider>
     );
     
-    const pre = screen.getByText(/SELECT count\(\*\)/);
+    const pre = screen.getByText(/SELECT count\(duration\)/);
     expect(pre).toHaveStyle({ backgroundColor: '#f5f5f5' });
   });
 });

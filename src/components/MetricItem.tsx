@@ -10,9 +10,9 @@ import {
 import {
     AGGREGATION_TYPES,
     type AggregationType,
-    METRIC_TYPES,
+    METRIC_FIELDS,
     type MetricQueryItem,
-    type MetricType,
+    getFieldByName,
 } from '../types/query';
 import {FilterRow} from './FilterRow';
 import {plusIcon} from "@xero/xui-icon";
@@ -32,10 +32,6 @@ interface MetricItemProps {
     isSingleItem: boolean;
 }
 
-function isDurationMetric(metricType: MetricType): boolean {
-    return metricType === 'duration';
-}
-
 export function MetricItem({
                                item,
                                index,
@@ -47,7 +43,8 @@ export function MetricItem({
     const updateFilter = useSetAtom(updateFilterAtom);
     const removeFilter = useSetAtom(removeFilterAtom);
 
-    const availableAggregations = isDurationMetric(item.metricType)
+    const fieldDef = getFieldByName(item.field);
+    const availableAggregations = fieldDef?.canAggregate
         ? AGGREGATION_TYPES
         : AGGREGATION_TYPES.filter((aggregation) => aggregation.value === 'count');
 
@@ -55,16 +52,16 @@ export function MetricItem({
         <Flex justify="start" align="center">
             <FlexItem className="xui-padding-horizontal">
                 <XUISingleSelect
-                    key={`${item.id}-metricType-${item.metricType}`}
-                    defaultSelectedOptionId={item.metricType}
+                    key={`${item.id}-field-${item.field}`}
+                    defaultSelectedOptionId={item.field}
                     onSelect={(selectedValue) =>
-                        updateItem({ id: item.id, updates: {metricType: selectedValue as MetricType} })
+                        updateItem({ id: item.id, updates: {field: selectedValue} })
                     }
                 >
                     <XUISingleSelectLabel>Metric {index + 1}</XUISingleSelectLabel>
                     <XUISingleSelectTrigger/>
-                    <XUISingleSelectOptions matchTriggerWidth>
-                        {METRIC_TYPES.map(({value, label}) => (
+                    <XUISingleSelectOptions matchTriggerWidth={false}>
+                        {METRIC_FIELDS.map(({value, label}) => (
                             <XUISingleSelectOption key={value} id={value}>
                                 {label}
                             </XUISingleSelectOption>
@@ -82,7 +79,7 @@ export function MetricItem({
                 >
                     <XUISingleSelectLabel>Aggregation</XUISingleSelectLabel>
                     <XUISingleSelectTrigger/>
-                    <XUISingleSelectOptions matchTriggerWidth>
+                    <XUISingleSelectOptions matchTriggerWidth={false}>
                         {availableAggregations.map(({value, label}) => (
                             <XUISingleSelectOption key={value} id={value}>
                                 {label}
@@ -95,6 +92,7 @@ export function MetricItem({
             <FlexItem>
                 <XUIButton
                     variant="borderless-main"
+                    style={{top: "12px"}}
                     onClick={() => addFilter({ metricItemId: item.id })}
                     leftIcon={plusIcon}
                 >

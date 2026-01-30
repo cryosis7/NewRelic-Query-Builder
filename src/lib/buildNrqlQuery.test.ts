@@ -7,6 +7,7 @@ function createTestFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
     field: 'duration',
     operator: '>',
     value: '',
+    negated: false,
     ...overrides,
   };
 }
@@ -18,7 +19,7 @@ function createTestState(overrides: Partial<QueryState> = {}): QueryState {
     metricItems: [
       {
         id: 'metric-1',
-        metricType: 'transaction-count',
+        field: 'duration',
         aggregationType: 'count',
         filters: [],
       },
@@ -50,7 +51,7 @@ describe('buildNrqlQuery', () => {
         environment: 'prod',
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("appName in ('global-tax-mapper-api-prod')");
+      expect(result).toContain("appName IN ('global-tax-mapper-api-prod')");
     });
 
     it('formats multiple applications as comma-separated list in appName in()', () => {
@@ -59,7 +60,7 @@ describe('buildNrqlQuery', () => {
         environment: 'prod',
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("appName in ('global-tax-mapper-api-prod', 'global-tax-mapper-bff-prod')");
+      expect(result).toContain("appName IN ('global-tax-mapper-api-prod', 'global-tax-mapper-bff-prod')");
     });
   });
 
@@ -83,13 +84,13 @@ describe('buildNrqlQuery', () => {
     });
   });
 
-  describe('metric types', () => {
-    it('generates SELECT average(duration) for duration metric with average aggregation', () => {
+  describe('metric fields', () => {
+    it('generates SELECT average(duration) for duration field with average aggregation', () => {
       const state = createTestState({
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'average',
             filters: [],
           },
@@ -97,31 +98,31 @@ describe('buildNrqlQuery', () => {
       });
       const result = buildNrqlQuery(state);
       expect(result).toContain('SELECT average(duration)');
-      expect(result).not.toContain('count(*)');
+      expect(result).not.toContain('count(duration)');
     });
 
-    it('generates SELECT count(*) for transaction-count metric type', () => {
+    it('generates SELECT count(duration) for duration field with count aggregation', () => {
       const state = createTestState({
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'transaction-count',
+            field: 'duration',
             aggregationType: 'count',
             filters: [],
           },
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(*)');
+      expect(result).toContain('SELECT count(duration)');
       expect(result).not.toContain('average(duration)');
     });
 
-    it('generates SELECT percentile(duration, 95) for duration metric with p95 aggregation', () => {
+    it('generates SELECT percentile(duration, 95) for duration field with p95 aggregation', () => {
       const state = createTestState({
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'p95',
             filters: [],
           },
@@ -131,27 +132,12 @@ describe('buildNrqlQuery', () => {
       expect(result).toContain('SELECT percentile(duration, 95)');
     });
 
-    it('generates SELECT count(duration) for duration metric with count aggregation', () => {
+    it('generates SELECT count(response.status) for response.status field', () => {
       const state = createTestState({
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'duration',
-            aggregationType: 'count',
-            filters: [],
-          },
-        ],
-      });
-      const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(duration)');
-    });
-
-    it('generates SELECT count(response.status) for response.status metric', () => {
-      const state = createTestState({
-        metricItems: [
-          {
-            id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
             filters: [],
           },
@@ -166,7 +152,7 @@ describe('buildNrqlQuery', () => {
     it('includes request.uri not in clause when excludeHealthChecks is true', () => {
       const state = createTestState({ excludeHealthChecks: true });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('request.uri not in (');
+      expect(result).toContain('request.uri NOT IN (');
       expect(result).toContain("'/ping'");
       expect(result).toContain("'/health'");
     });
@@ -174,7 +160,7 @@ describe('buildNrqlQuery', () => {
     it('does not include request.uri not in clause when excludeHealthChecks is false', () => {
       const state = createTestState({ excludeHealthChecks: false });
       const result = buildNrqlQuery(state);
-      expect(result).not.toContain('request.uri not in');
+      expect(result).not.toContain('request.uri NOT IN');
     });
   });
 
@@ -230,7 +216,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'transaction-count',
+            field: 'duration',
             aggregationType: 'count',
             filters: [],
           },
@@ -242,10 +228,10 @@ describe('buildNrqlQuery', () => {
 
       // Verify all parts are present
       expect(result).toContain('FROM Transaction');
-      expect(result).toContain('SELECT count(*)');
+      expect(result).toContain('SELECT count(duration)');
       expect(result).toContain('WHERE');
-      expect(result).toContain('appName in (');
-      expect(result).toContain('request.uri not in (');
+      expect(result).toContain('appName IN (');
+      expect(result).toContain('request.uri NOT IN (');
       expect(result).toContain('TIMESERIES AUTO');
       expect(result).toContain('SINCE');
       expect(result).toContain('UNTIL');
@@ -255,7 +241,7 @@ describe('buildNrqlQuery', () => {
     it('joins WHERE conditions with and', () => {
       const state = createTestState({ excludeHealthChecks: true });
       const result = buildNrqlQuery(state);
-      expect(result).toMatch(/appName in \([^)]+\) and request\.uri not in/);
+      expect(result).toMatch(/appName IN \([^)]+\) AND request\.uri NOT IN/);
     });
   });
   describe('faceting', () => {
@@ -324,7 +310,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'count',
             filters: [createTestFilter({ value: '0.5' })],
           },
@@ -342,21 +328,24 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'count',
             filters: [createTestFilter({ value: '0.5' })],
           },
           {
             id: 'metric-2',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'average',
             filters: [],
           },
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT filter(count(duration), where duration > 0.5), average(duration)');
-      expect(result).not.toContain('WHERE duration > 0.5');
+      expect(result).toContain('SELECT filter(count(duration), WHERE duration > 0.5), average(duration)');
+      // Verify duration > 0.5 doesn't appear in the global WHERE clause (only inside filter())
+      // The global WHERE should only contain appName and request.uri conditions
+      expect(result).toMatch(/WHERE appName IN/);
+      expect(result).not.toMatch(/WHERE appName[^]*duration > 0\.5[^]*TIMESERIES/);
     });
   });
 
@@ -366,7 +355,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404' })],
           },
@@ -381,7 +370,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 500' })],
           },
@@ -396,9 +385,9 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
-            filters: [createTestFilter({ field: 'response.status', operator: 'LIKE', value: '4xx' })],
+            filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx' })],
           },
         ],
       });
@@ -411,9 +400,9 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
-            filters: [createTestFilter({ field: 'response.status', operator: 'LIKE', value: '4%' })],
+            filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4%' })],
           },
         ],
       });
@@ -426,7 +415,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '503, 4xx' })],
           },
@@ -441,7 +430,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 4xx, 5xx' })],
           },
@@ -456,9 +445,9 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
-            filters: [createTestFilter({ field: 'response.status', operator: 'LIKE', value: '4xx, 5xx' })],
+            filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx, 5xx' })],
           },
         ],
       });
@@ -471,7 +460,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'response.status',
+            field: 'response.status',
             aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: ' 404 , 503 , 500 ' })],
           },
@@ -488,7 +477,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'transaction-count',
+            field: 'duration',
             aggregationType: 'count',
             filters: [
               createTestFilter({ id: 'filter-1', field: 'response.status', operator: '=', value: '200' }),
@@ -500,7 +489,7 @@ describe('buildNrqlQuery', () => {
       const result = buildNrqlQuery(state);
       expect(result).toContain('response.status = 200');
       expect(result).toContain('duration > 0.5');
-      expect(result).toContain(' and ');
+      expect(result).toContain(' AND ');
     });
 
     it('ignores empty filter values', () => {
@@ -508,7 +497,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'count',
             filters: [
               createTestFilter({ id: 'filter-1', field: 'duration', operator: '>', value: '0.5' }),
@@ -527,7 +516,7 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'count',
             filters: [
               createTestFilter({ id: 'filter-1', field: 'duration', operator: '>', value: '' }),
@@ -547,21 +536,21 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'transaction-count',
+            field: 'duration',
             aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx' })],
           },
           {
             id: 'metric-2',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'average',
             filters: [createTestFilter({ id: 'filter-2', field: 'duration', operator: '>', value: '1' })],
           },
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("SELECT filter(count(*), where response.status LIKE '4%')");
-      expect(result).toContain('filter(average(duration), where duration > 1)');
+      expect(result).toContain("SELECT filter(count(duration), WHERE response.status LIKE '4%')");
+      expect(result).toContain('filter(average(duration), WHERE duration > 1)');
     });
 
     it('lifts shared filters to global WHERE clause', () => {
@@ -569,22 +558,227 @@ describe('buildNrqlQuery', () => {
         metricItems: [
           {
             id: 'metric-1',
-            metricType: 'transaction-count',
+            field: 'duration',
             aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '200' })],
           },
           {
             id: 'metric-2',
-            metricType: 'duration',
+            field: 'duration',
             aggregationType: 'average',
             filters: [createTestFilter({ id: 'filter-2', field: 'response.status', operator: '=', value: '200' })],
           },
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(*), average(duration)');
+      expect(result).toContain('SELECT count(duration), average(duration)');
       expect(result).toContain('response.status = 200');
       expect(result).not.toContain('filter(');
+    });
+  });
+
+  describe('negated filters', () => {
+    describe('numeric operators', () => {
+      it('negates = operator to !=', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'duration',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'duration', operator: '=', value: '0.5', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('duration != 0.5');
+      });
+
+      it('negates > operator to <=', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'duration',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'duration', operator: '>', value: '0.5', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('duration <= 0.5');
+      });
+
+      it('negates >= operator to <', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'duration',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'duration', operator: '>=', value: '0.5', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('duration < 0.5');
+      });
+
+      it('negates < operator to >=', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'duration',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'duration', operator: '<', value: '0.5', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('duration >= 0.5');
+      });
+
+      it('negates <= operator to >', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'duration',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'duration', operator: '<=', value: '0.5', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('duration > 0.5');
+      });
+    });
+
+    describe('string operators', () => {
+      it('negates = operator to != for string fields', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'duration',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'request.uri', operator: '=', value: '/api/test', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain("request.uri != /api/test");
+      });
+
+      it('negates IN operator to NOT IN for string fields', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'duration',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'request.uri', operator: 'IN', value: '/api/test, /api/other', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('request.uri NOT IN (/api/test, /api/other)');
+      });
+    });
+
+    describe('response.status filters', () => {
+      it('negates single exact status code = to !=', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'response.status',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('response.status != 404');
+      });
+
+      it('negates multiple exact status codes IN to NOT IN', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'response.status',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 500', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('response.status NOT IN (404, 503, 500)');
+      });
+
+      it('negates single fuzzy status code LIKE to NOT LIKE', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'response.status',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain("response.status NOT LIKE '4%'");
+      });
+
+      it('negates multiple fuzzy status codes LIKE to NOT LIKE', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'response.status',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx, 5xx', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain("response.status NOT LIKE '4%'");
+        expect(result).toContain("response.status NOT LIKE '5%'");
+        expect(result).toContain(' OR ');
+      });
+
+      it('negates mixed exact and fuzzy codes with OR grouping', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'response.status',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'response.status', operator: '=', value: '503, 4xx', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain("(response.status != 503 OR response.status NOT LIKE '4%')");
+      });
+
+      it('negates multiple exact and fuzzy codes with OR grouping', () => {
+        const state = createTestState({
+          metricItems: [
+            {
+              id: 'metric-1',
+              field: 'response.status',
+              aggregationType: 'count',
+              filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 4xx, 5xx', negated: true })],
+            },
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain("(response.status NOT IN (404, 503) OR response.status NOT LIKE '4%' OR response.status NOT LIKE '5%')");
+      });
     });
   });
 });

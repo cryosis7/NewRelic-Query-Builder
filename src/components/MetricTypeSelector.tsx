@@ -5,11 +5,11 @@ import {
   XUISingleSelectOptions,
   XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
-import { METRIC_TYPES, type MetricType } from '../types/query';
+import { METRIC_FIELDS } from '../types/query';
 
 interface MetricTypeSelectorProps {
-  selectedMetricType: MetricType;
-  onChange: (metricType: MetricType) => void;
+  selectedMetricType: string;
+  onChange: (field: string) => void;
 }
 
 export function MetricTypeSelector({ selectedMetricType, onChange }: MetricTypeSelectorProps) {
@@ -17,12 +17,12 @@ export function MetricTypeSelector({ selectedMetricType, onChange }: MetricTypeS
     <XUISingleSelect
       key={`metricType-${selectedMetricType}`}
       defaultSelectedOptionId={selectedMetricType}
-      onSelect={(value) => onChange(value as MetricType)}
+      onSelect={(value) => onChange(value)}
     >
       <XUISingleSelectLabel>Metric Type</XUISingleSelectLabel>
       <XUISingleSelectTrigger />
-      <XUISingleSelectOptions matchTriggerWidth>
-        {METRIC_TYPES.map(({ value, label }) => (
+      <XUISingleSelectOptions matchTriggerWidth={false}>
+        {METRIC_FIELDS.map(({ value, label }) => (
           <XUISingleSelectOption key={value} id={value}>
             {label}
           </XUISingleSelectOption>

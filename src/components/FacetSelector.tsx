@@ -20,7 +20,7 @@ export function FacetSelector() {
     >
       <XUISingleSelectLabel>Facet By</XUISingleSelectLabel>
       <XUISingleSelectTrigger />
-      <XUISingleSelectOptions matchTriggerWidth>
+      <XUISingleSelectOptions matchTriggerWidth={false}>
         {FACET_OPTIONS.map(({ value, label }) => (
           <XUISingleSelectOption key={value} id={value}>
             {label}

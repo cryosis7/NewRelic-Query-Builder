@@ -1,5 +1,6 @@
 import {XUIIconButton} from '@xero/xui/react/button';
 import clear from "@xero/xui-icon/icons-es6/clear";
+import exclamation from "@xero/xui-icon/icons-es6/exclamation";
 import {
     XUISingleSelect,
     XUISingleSelectLabel,
@@ -8,7 +9,7 @@ import {
     XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
 import XUITextInput from '@xero/xui/react/textinput';
-import {FILTER_FIELDS, type FilterField, METRIC_FILTER_OPERATORS, type MetricFilter,} from '../types/query';
+import {FILTER_FIELDS, getFieldByName, getOperatorsForField, type MetricFilter} from '../types/query';
 import {Flex, FlexItem} from './layout';
 
 interface FilterRowProps {
@@ -18,26 +19,18 @@ interface FilterRowProps {
     onRemove: (metricItemId: string, filterId: string) => void;
 }
 
-function isResponseStatusField(field: FilterField): boolean {
-    return field === 'response.status';
-}
-
-function getOperatorsForField(field: FilterField) {
-    if (isResponseStatusField(field)) {
-        return METRIC_FILTER_OPERATORS.filter(op => ['=', 'LIKE', 'IN'].includes(op.value));
-    }
-    return METRIC_FILTER_OPERATORS.filter(op => ['>', '>=', '<', '<=', '='].includes(op.value));
-}
-
-function getPlaceholderForField(field: FilterField): string {
-    if (isResponseStatusField(field)) {
-        return 'e.g. 404, 503 or 4xx, 5xx';
+function getPlaceholderForField(field: string): string {
+    const fieldDef = getFieldByName(field);
+    if (fieldDef?.dataType === 'string') {
+        if (field === 'response.status') {
+            return 'e.g. 404, 503 or 4xx, 5xx';
+        }
+        return 'e.g. /api/endpoint';
     }
     return 'e.g. 0.5';
 }
 
 export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowProps) {
-    const isStatusField = isResponseStatusField(filter.field);
     const availableOperators = getOperatorsForField(filter.field);
     const placeholder = getPlaceholderForField(filter.field);
 
@@ -46,7 +39,7 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
             <FlexItem alignSelf="stretch" alignContent="center">
                     <XUIIconButton
                         className="xui-padding-xsmall-bottom"
-                        style={{width: '36px', height: '36px', transform: 'translateY(+25%)'}}
+                        style={{width: '38px', height: '38px', top: "12px"}}
                         ariaLabel="Remove filter"
                         iconSize="small"
                         iconColor={"red"}
@@ -60,12 +53,12 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                     key={`${filter.id}-field-${filter.field}`}
                     defaultSelectedOptionId={filter.field}
                     onSelect={(selectedValue) =>
-                        onUpdate(metricItemId, filter.id, {field: selectedValue as FilterField})
+                        onUpdate(metricItemId, filter.id, {field: selectedValue})
                     }
                 >
                     <XUISingleSelectLabel>Field</XUISingleSelectLabel>
                     <XUISingleSelectTrigger/>
-                    <XUISingleSelectOptions matchTriggerWidth>
+                    <XUISingleSelectOptions matchTriggerWidth={false}>
                         {FILTER_FIELDS.map(({value, label}) => (
                             <XUISingleSelectOption key={value} id={value}>
                                 {label}
@@ -75,27 +68,36 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                 </XUISingleSelect>
             </FlexItem>
 
-            {!isStatusField && (
-                <FlexItem className="xui-padding-xsmall">
-                    <XUISingleSelect
-                        key={`${filter.id}-operator-${filter.operator}`}
-                        defaultSelectedOptionId={filter.operator}
-                        onSelect={(selectedValue) =>
-                            onUpdate(metricItemId, filter.id, {operator: selectedValue as MetricFilter['operator']})
-                        }
-                    >
-                        <XUISingleSelectLabel>Operator</XUISingleSelectLabel>
-                        <XUISingleSelectTrigger/>
-                        <XUISingleSelectOptions matchTriggerWidth>
-                            {availableOperators.map(({value, label}) => (
-                                <XUISingleSelectOption key={value} id={value}>
-                                    {label}
-                                </XUISingleSelectOption>
-                            ))}
-                        </XUISingleSelectOptions>
-                    </XUISingleSelect>
-                </FlexItem>
-            )}
+            <FlexItem alignSelf="stretch" alignContent="center">
+                <XUIIconButton
+                    style={{width: '38px', height: '38px', top: "12px"}}
+                    ariaLabel="Toggle NOT"
+                    iconSize="small"
+                    iconColor={filter.negated ? "orange" : undefined}
+                    icon={exclamation}
+                    onClick={() => onUpdate(metricItemId, filter.id, {negated: !filter.negated})}
+                />
+            </FlexItem>
+
+            <FlexItem className="xui-padding-xsmall">
+                <XUISingleSelect
+                    key={`${filter.id}-operator-${filter.operator}`}
+                    defaultSelectedOptionId={filter.operator}
+                    onSelect={(selectedValue) =>
+                        onUpdate(metricItemId, filter.id, {operator: selectedValue as MetricFilter['operator']})
+                    }
+                >
+                    <XUISingleSelectLabel>Operator</XUISingleSelectLabel>
+                    <XUISingleSelectTrigger/>
+                    <XUISingleSelectOptions matchTriggerWidth={false}>
+                        {availableOperators.map(({value, label}) => (
+                            <XUISingleSelectOption key={value} id={value}>
+                                {label}
+                            </XUISingleSelectOption>
+                        ))}
+                    </XUISingleSelectOptions>
+                </XUISingleSelect>
+            </FlexItem>
 
             <FlexItem grow className="xui-padding-xsmall">
                 <XUITextInput

@@ -20,7 +20,7 @@ export function EnvironmentSelector() {
     >
       <XUISingleSelectLabel>Environment</XUISingleSelectLabel>
       <XUISingleSelectTrigger />
-      <XUISingleSelectOptions matchTriggerWidth>
+      <XUISingleSelectOptions matchTriggerWidth={false}>
         {ENVIRONMENTS.map(({ value, label }) => (
           <XUISingleSelectOption key={value} id={value}>
             {label}

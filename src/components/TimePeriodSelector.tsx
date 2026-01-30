@@ -7,7 +7,7 @@ import {
     XUISingleSelectOptions,
     XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
-import XUIRadio, {XUIRadioGroup} from '@xero/xui/react/radio';
+import XUIToggle, { XUIToggleOption } from '@xero/xui/react/toggle';
 import XUIDateInput from '@xero/xui/react/dateinput';
 import type {TimePeriodMode} from '../types/query';
 import React from "react";
@@ -142,24 +142,24 @@ export function TimePeriodSelector() {
 
     return (
         <XUIControlGroup label="Time Period" isLockedVertical>
-            <XUIRadioGroup label="Mode" isFieldLayout>
-                <XUIRadio
+            <XUIToggle label="Mode" layout="fullwidth" className='xui-margin-bottom-small'>
+                <XUIToggleOption
                     name="timePeriodMode"
-                    value="relative"
+                    type="radio"
                     isChecked={mode === 'relative'}
                     onChange={() => handleModeChange('relative')}
                 >
                     Relative
-                </XUIRadio>
-                <XUIRadio
+                </XUIToggleOption>
+                <XUIToggleOption
                     name="timePeriodMode"
-                    value="absolute"
+                    type="radio"
                     isChecked={mode === 'absolute'}
                     onChange={() => handleModeChange('absolute')}
                 >
                     Exact
-                </XUIRadio>
-            </XUIRadioGroup>
+                </XUIToggleOption>
+            </XUIToggle>
 
             {mode === 'absolute' ? (
                 <>

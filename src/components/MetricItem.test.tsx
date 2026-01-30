@@ -11,6 +11,7 @@ function createFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
     field: 'duration',
     operator: '>',
     value: '',
+    negated: false,
     ...overrides,
   };
 }
@@ -18,7 +19,7 @@ function createFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
 function createItem(overrides: Partial<MetricQueryItem> = {}): MetricQueryItem {
   return {
     id: 'metric-1',
-    metricType: 'transaction-count',
+    field: 'duration',
     aggregationType: 'count',
     filters: [],
     ...overrides,
