@@ -50,8 +50,8 @@ export function MetricItem({
         : AGGREGATION_TYPES.filter((aggregation) => aggregation.value === 'count');
 
     return (
-        <Flex justify="start" align="center">
-            <FlexItem className="xui-padding">
+        <Flex justify="start" align="center" debug>
+            <FlexItem className="xui-padding-horizontal">
                 <XUISingleSelect
                     key={`${item.id}-metricType-${item.metricType}`}
                     defaultSelectedOptionId={item.metricType}
@@ -70,7 +70,7 @@ export function MetricItem({
                     </XUISingleSelectOptions>
                 </XUISingleSelect>
             </FlexItem>
-            <FlexItem className="xui-padding">
+            <FlexItem className="xui-padding-horizontal">
                 <XUISingleSelect
                     key={`${item.id}-aggregation-${item.aggregationType}`}
                     defaultSelectedOptionId={item.aggregationType}
@@ -117,7 +117,7 @@ export function MetricItem({
             )}
 
             {!isSingleItem && (
-                <FlexItem className="xui-margin-left">
+                <FlexItem grow debug className="xui-margin-left">
                     <XUIButton
                         variant="negative"
                         onClick={() => onRemoveItem(item.id)}

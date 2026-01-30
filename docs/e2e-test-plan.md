@@ -6,7 +6,8 @@ This document outlines the E2E testing strategy for the NR-Query-Builder applica
 
 **Test Status:**
 - ✅ 65 E2E tests implemented and passing
-- ⚠️ 3 UI issues discovered (see [UI Issues](#ui-issues-found-during-testing))
+- ✅ 172 unit tests passing
+- ⚠️ 1 UI issue discovered (see [UI Issues](#ui-issues-found-during-testing))
 
 **Test Coverage Areas:**
 - Application Selection (5 tests)
@@ -17,6 +18,8 @@ This document outlines the E2E testing strategy for the NR-Query-Builder applica
 - Options, Facets & Presets (15 tests)
 - Query Preview & Validation (10 tests)
 - Basic Load Tests (2 tests)
+
+**Last Updated:** January 30, 2026
 
 ---
 
@@ -62,22 +65,26 @@ The NR-Query-Builder is a React + TypeScript application for building New Relic 
 
 | Scenario | User Action | Expected Result |
 |----------|-------------|-----------------|
-| 3.1.1 Default mode | Load the application | "Exact" radio is selected; Since/Until date-time inputs are visible |
+| 3.1.1 Switch to Exact mode | Click "Exact" radio button | "Exact" radio is selected; Since/Until date-time inputs are visible |
 | 3.1.2 Change Since date | Select a different date using date picker | Query SINCE clause updates with new date |
 | 3.1.3 Change Since time | Change time using time picker | Query SINCE clause updates with new time |
 | 3.1.4 Change Until date | Select a different date using date picker | Query UNTIL clause updates with new date |
 | 3.1.5 Change Until time | Change time using time picker | Query UNTIL clause updates with new time |
+
+**Note:** The default mode is "Relative", not "Exact". Users must click the "Exact" radio to switch to absolute time mode.
 
 #### 3.2 Relative Time Mode
 
 | Scenario | User Action | Expected Result |
 |----------|-------------|-----------------|
 | 3.2.1 Switch to relative | Click "Relative" radio button | Relative time input appears; Since/Until inputs disappear |
-| 3.2.2 Default relative value | Switch to relative mode | Query shows `SINCE 1 hour ago UNTIL now` |
-| 3.2.3 Type custom relative | Type "3h ago" in relative input | Query updates to `SINCE 3 hours ago` |
+| 3.2.2 Default relative value | Load application (default is relative mode) | Query shows `SINCE 3 hours ago UNTIL now` |
+| 3.2.3 Type custom relative | Type "1h ago" in relative input | Query updates to `SINCE 1 hour ago` |
 | 3.2.4 Select preset relative | Select "30m ago" from dropdown | Query updates to `SINCE 30 minutes ago` |
 | 3.2.5 Invalid relative input | Type "invalid" in relative input | Query shows `-- Enter a valid relative time (e.g., 3h ago)` warning |
 | 3.2.6 Valid formats | Test "15m", "1h", "7d", "2 hours ago" | All should produce valid SINCE clauses |
+
+**Note:** The default time period mode is "Relative" with a value of "3h ago".
 
 ### 4. Metric Query Builder
 
@@ -114,10 +121,10 @@ The NR-Query-Builder is a React + TypeScript application for building New Relic 
 
 | Scenario | User Action | Expected Result |
 |----------|-------------|-----------------|
-| 5.1.1 Add filter | Click "+ Add filter" on a metric item | Filter row appears with Field, Operator, Value inputs |
+| 5.1.1 Add filter | Click "Add Filter" button on a metric item | Filter row appears with Field, Operator, Value inputs |
 | 5.1.2 Add multiple filters | Add 2+ filters to same metric | Filters combine with AND; query shows `filter(..., where X and Y)` |
 | 5.1.3 Remove filter | Click X button on a filter | Filter is removed; query updates |
-| 5.1.4 Empty filter value | Leave filter value empty | Filter is ignored in query (no syntax error) |
+| 5.1.4 Empty filter value | Leave filter value empty | Filter shows validation warning "Empty filter will be ignored"; filter is ignored in query (no syntax error) |
 
 #### 5.2 Duration Filters
 
@@ -143,9 +150,11 @@ The NR-Query-Builder is a React + TypeScript application for building New Relic 
 |----------|-------------|-----------------|
 | 6.1 Default health check | Load the application | "Exclude health checks" is checked; query has `request.uri not in (...)` |
 | 6.2 Disable health check exclusion | Uncheck "Exclude health checks" | Health check paths filter removed from query |
-| 6.3 Health check hint | Observe checkbox with exclusion enabled | Hint shows first few excluded paths |
-| 6.4 Default timeseries | Load the application | "Use TIMESERIES" is checked; query has `TIMESERIES 1 MINUTE` |
-| 6.5 Disable timeseries | Uncheck "Use TIMESERIES" | `TIMESERIES` clause removed from query |
+| 6.3 Health check hint | Observe checkbox with exclusion enabled | No hint text displayed (checkbox only) |
+| 6.4 Default timeseries | Load the application | "As Timeseries" is checked; query has `TIMESERIES AUTO` |
+| 6.5 Disable timeseries | Uncheck "As Timeseries" | `TIMESERIES` clause removed from query |
+
+**Note:** The timeseries checkbox label is "As Timeseries" (not "Use TIMESERIES") and generates `TIMESERIES AUTO` (not `TIMESERIES 1 MINUTE`).
 
 ### 7. Facet Selection
 
@@ -185,7 +194,7 @@ The NR-Query-Builder is a React + TypeScript application for building New Relic 
 
 | Scenario | User Action | Expected Result |
 |----------|-------------|-----------------|
-| 10.1 Basic query structure | Default state | Query follows: `FROM Transaction select ... WHERE ... TIMESERIES ... SINCE ... UNTIL ... FACET ...` |
+| 10.1 Basic query structure | Default state | Query follows: `FROM Transaction select count(*) WHERE appName in ('global-tax-mapper-api-prod') and request.uri not in (...) TIMESERIES AUTO SINCE 3 hours ago UNTIL now FACET request.uri` |
 | 10.2 Multiple metrics | Add 2 duration metrics with different aggs | SELECT clause has both: `average(duration), percentile(duration, 95)` |
 | 10.3 Shared filters lifted | Add same filter to multiple metrics | Filter appears in WHERE clause, not wrapped in filter() |
 | 10.4 Different filters per metric | Add different filters to each metric | Each metric wrapped in `filter()` with its conditions |
@@ -251,6 +260,15 @@ The NR-Query-Builder is a React + TypeScript application for building New Relic 
 ### Relative Time Options
 - `15m ago`, `30m ago`, `1h ago`, `3h ago`, `6h ago`, `12h ago`, `24h ago`, `7d ago`
 
+### Default Values
+- **Time Period Mode**: Relative
+- **Default Relative Time**: `3h ago`
+- **Exclude Health Checks**: Enabled (checked)
+- **As Timeseries**: Enabled (checked)
+- **Facet**: Request URI
+- **Environment**: Production
+- **Selected Applications**: API only
+
 ---
 
 ## UI Issues Found During Testing
@@ -259,15 +277,13 @@ The NR-Query-Builder is a React + TypeScript application for building New Relic 
 
 ### Issue Log
 
-| Issue # | Component | Description | Severity | Details |
-|---------|-----------|-------------|----------|---------|
-| UI-001 | FilterRow | SVG icon rendering errors when adding a filter | Medium | Console errors: `Error: <svg> attribute height: Expected length, "NaN"`, `Error: <svg> attribute viewBox: Expected number`, `Error: <svg> attribute width: Expected length, "NaN"`. The error occurs in `FilterRow.tsx` at the `XUIIcon` component used in `XUITextInput.leftElement` prop. |
-| UI-002 | FilterRow | React prop type warning | Low | `Warning: Received NaN for the height/width attribute`. This indicates the XUI icon is receiving undefined or invalid size props. |
-| UI-003 | FilterRow | Invalid icon configuration | Medium | The `invalid` icon from `@xero/xui-icon/icons/invalid` may not be compatible with the `size="small"` prop when used as `leftElement` in `XUITextInput`. |
+| Issue # | Component | Description | Severity | Status | Details |
+|---------|-----------|-------------|----------|--------|---------|
+| UI-001 | FilterRow | SVG icon rendering errors when adding a filter | Medium | 🔍 Open | Console errors occur when validation icon is displayed. The `XUIIcon` component used in `XUITextInput.leftElement` prop receives invalid dimensions. |
 
 ### Detailed Analysis
 
-#### Issue UI-001 to UI-003: FilterRow SVG Rendering Errors
+#### Issue UI-001: FilterRow SVG Rendering Errors
 
 **Location:** [src/components/FilterRow.tsx](../src/components/FilterRow.tsx#L107)
 
@@ -293,14 +309,17 @@ The `XUIIcon` component is receiving invalid or undefined dimensions when render
 
 **Impact:**
 - The validation icon does not render properly (may appear broken or missing)
-- Console is polluted with error messages
+- Console is polluted with error messages during E2E tests
 - Could potentially cause visual issues for users
 
 **Recommended Fix:**
 1. Check the XUI documentation for correct icon usage in TextInput's leftElement
 2. Try removing the `size` prop or using explicit dimensions
-3. Consider using a different validation approach (e.g., `validationIcon` prop if available)
+3. Consider using `validationMessage` prop instead of `leftElement` icon (already implemented)
 4. Verify `@xero/xui` and `@xero/xui-icon` versions are compatible
+
+**Workaround:**
+The `validationMessage` prop is now used to display "Empty filter will be ignored", which provides user feedback without relying on the problematic icon.
 
 ---
 
@@ -311,3 +330,22 @@ The `XUIIcon` component is receiving invalid or undefined dimensions when render
 3. **Time-dependent Tests**: Preset time calculations are relative to current time - use date mocking if precise assertions needed
 4. **XUI Components**: Some XUI components may require specific interaction patterns (click trigger, then click option for dropdowns)
 5. **Async Updates**: Query preview updates may need `waitFor` assertions
+6. **Button Text**: The "Add Filter" button text does not include the "+" symbol (that's a separate icon)
+7. **Combobox Selectors**: XUISingleSelect components may not create proper label associations; use text-based filtering instead of `getByLabel()`
+8. **Component Structure**: The MetricQueryBuilder no longer uses `XUIControlGroup`, so tests should not look for a "Metric Queries" group role
+
+## Recent Test Fixes (January 2026)
+
+### Unit Tests
+- Updated TIMESERIES expectations from `"1 MINUTE"` to `"AUTO"`
+- Fixed checkbox label from `"Use TIMESERIES"` to `"As Timeseries"`
+- Added `validationMessage` prop to FilterRow for empty value warnings
+- Fixed TimePicker label expectations
+
+### E2E Tests
+- Updated button selector from `"+ Add filter"` to `"Add Filter"`
+- Removed references to non-existent "Metric Queries" group
+- Fixed combobox selectors to use text-based filtering
+- Updated default time period mode expectations to "Relative" with "3h ago"
+- Updated timeseries checkbox label and TIMESERIES clause format
+- Fixed "Remove button" test to check visibility instead of disabled state

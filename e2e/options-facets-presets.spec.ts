@@ -34,17 +34,17 @@ test.describe('Options, Facets, and Presets', () => {
 
     test('6.4 Default timeseries - Use TIMESERIES is checked', async ({ page }) => {
       // Timeseries checkbox should be checked by default
-      const timeseriesCheckbox = page.getByRole('checkbox', { name: 'Use TIMESERIES' });
+      const timeseriesCheckbox = page.getByRole('checkbox', { name: 'As Timeseries' });
       await expect(timeseriesCheckbox).toBeChecked();
 
       // Query should contain TIMESERIES clause
       const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toContainText("TIMESERIES 1 MINUTE");
+      await expect(queryPreview).toContainText("TIMESERIES AUTO");
     });
 
     test('6.5 Disable timeseries - TIMESERIES clause removed', async ({ page }) => {
       // Uncheck timeseries
-      const timeseriesCheckbox = page.getByRole('checkbox', { name: 'Use TIMESERIES' });
+      const timeseriesCheckbox = page.getByRole('checkbox', { name: 'As Timeseries' });
       await timeseriesCheckbox.uncheck();
       await expect(timeseriesCheckbox).not.toBeChecked();
 

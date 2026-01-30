@@ -21,10 +21,10 @@ describe('TimePicker', () => {
     expect(screen.getByDisplayValue('14:30')).toBeInTheDocument();
   });
 
-  it('renders optional label when provided', () => {
-    render(<TimePicker value="08:00" onChange={mockOnChange} label="Start Time" />);
+  it('renders Time label', () => {
+    render(<TimePicker value="08:00" onChange={mockOnChange} />);
 
-    expect(screen.getByText('Start Time')).toBeInTheDocument();
+    expect(screen.getByText('Time')).toBeInTheDocument();
   });
 
   it('calls onChange when time is changed', async () => {

@@ -113,9 +113,9 @@ Always search the XUI docs in the Xero docs tool
 // ✅ Correct imports
 import XUICheckbox, { XUICheckboxGroup } from '@xero/xui/react/checkbox';
 import XUIButton from '@xero/xui/react/button';
-import { XUIRow, XUIColumn } from '@xero/xui/react/structural';
 import XUIRadio, { XUIRadioGroup } from '@xero/xui/react/radio';
 import XUITextInput from '@xero/xui/react/textinput';
+import { Flex, FlexItem } from './components';
 
 // ❌ Never use raw HTML
 <input type="checkbox" />
@@ -127,8 +127,28 @@ import XUITextInput from '@xero/xui/react/textinput';
 
 - `XUICheckboxGroup` with `isFieldLayout` for labeled checkbox groups
 - `XUIRadioGroup` with `isFieldLayout` for radio button groups
-- `XUIRow variant="grid"` + `XUIColumn gridColumns={N}` for layout
+- `Flex` and `FlexItem` components from `./components` for layout
 - XUI utility classes: `xui-margin-*`, `xui-padding-*`, `xui-heading-*`
+
+### Layout with Flex/FlexItem
+
+Use the custom `Flex` and `FlexItem` components for layouts instead of XUI's `XUIRow`/`XUIColumn`:
+
+```tsx
+// ✅ Use Flex/FlexItem for multi-column layouts
+import { Flex, FlexItem } from './components';
+
+<Flex gap="1rem" className="xui-margin-top">
+  <FlexItem flex={1}>Column 1</FlexItem>
+  <FlexItem flex={1}>Column 2</FlexItem>
+  <FlexItem flex={1}>Column 3</FlexItem>
+</Flex>
+
+// ✅ For single full-width content, use a simple div
+<div className="xui-margin-top">
+  <QueryPreview query={query} />
+</div>
+```
 
 ## Testing
 

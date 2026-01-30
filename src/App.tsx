@@ -1,111 +1,131 @@
-import { XUIRow, XUIColumn } from '@xero/xui/react/structural';
-import { useQueryBuilder } from './hooks/useQueryBuilder';
-import { 
-  ApplicationSelector, 
-  EnvironmentSelector, 
-  MetricQueryBuilder,
-  TimePeriodSelector,
-  HealthCheckToggle,
-  CommonQueriesPanel,
-  QueryPreview,
-  FacetSelector,
+import {useQueryBuilder} from './hooks/useQueryBuilder';
+import {
+    ApplicationSelector,
+    EnvironmentSelector,
+    MetricQueryBuilder,
+    TimePeriodSelector,
+    HealthCheckToggle,
+    CommonQueriesPanelSection,
+    QueryPreview,
+    FacetSelector,
+    Flex,
+    FlexItem,
 } from './components';
+import {XUIPageHeader} from "@xero/xui/react/pageheader";
+import XUIPanel, {
+    XUIPanelFooter,
+    XUIPanelHeader,
+    XUIPanelHeading,
+    XUIPanelSection,
+    XUIPanelSectionHeading
+} from "@xero/xui/react/panel";
 
 function App() {
-  const {
-    state,
-    query,
-    toggleApplication,
-    setEnvironment,
-    addMetricItem,
-    updateMetricItem,
-    removeMetricItem,
-    addFilter,
-    updateFilter,
-    removeFilter,
-    setTimeMode,
-    setSince,
-    setUntil,
-    setRelative,
-    setExcludeHealthChecks,
-    setUseTimeseries,
-    setFacet,
-    applyPreset,
-  } = useQueryBuilder();
+    const {
+        state,
+        query,
+        toggleApplication,
+        setEnvironment,
+        addMetricItem,
+        updateMetricItem,
+        removeMetricItem,
+        addFilter,
+        updateFilter,
+        removeFilter,
+        setTimeMode,
+        setSince,
+        setUntil,
+        setRelative,
+        setExcludeHealthChecks,
+        setUseTimeseries,
+        setFacet,
+        applyPreset,
+    } = useQueryBuilder();
 
-  return (
-    <div className="xui-page-width-large xui-padding-large">
-      <h1 className="xui-heading-xlarge xui-margin-bottom-large">New Relic Query Builder</h1>
+    const header = (<XUIPanelHeader><XUIPanelHeading headingLevel={1}>New Relic Query
+        Builder</XUIPanelHeading>
+    </XUIPanelHeader>)
+    const footer = (<XUIPanelFooter><QueryPreview query={query}/></XUIPanelFooter>)
 
-      <CommonQueriesPanel onSelectPreset={applyPreset} />
+    return (
+        <div className="xui-page-width-large xui-padding-large">
+            {/*<XUIPageHeader title="New Relic Query Builder" className="xui-margin-bottom"/>*/}
 
-      <XUIRow variant="grid" className="xui-margin-top-large">
-        <XUIColumn gridColumns={4}>
-          <ApplicationSelector
-            selectedApplications={state.applications}
-            onToggle={toggleApplication}
-          />
-        </XUIColumn>
-        <XUIColumn gridColumns={4}>
-          <EnvironmentSelector
-            selectedEnvironment={state.environment}
-            onChange={setEnvironment}
-          />
-        </XUIColumn>
-        <XUIColumn gridColumns={4}>
-          <TimePeriodSelector
-            mode={state.timePeriod.mode}
-            since={state.timePeriod.since}
-            until={state.timePeriod.until}
-            relative={state.timePeriod.relative}
-            onModeChange={setTimeMode}
-            onSinceChange={setSince}
-            onUntilChange={setUntil}
-            onRelativeChange={setRelative}
-          />
-        </XUIColumn>
-      </XUIRow>
+            <XUIPanel
+                header={header}
+                footer={footer}
+            >
+                <CommonQueriesPanelSection onSelectPreset={applyPreset}/>
 
-      <XUIRow variant="grid" className="xui-margin-top">
-        <XUIColumn gridColumns={12}>
-          <hr/>
-          <MetricQueryBuilder
-            items={state.metricItems}
-            onAddItem={addMetricItem}
-            onRemoveItem={removeMetricItem}
-            onUpdateItem={updateMetricItem}
-            onAddFilter={addFilter}
-            onUpdateFilter={updateFilter}
-            onRemoveFilter={removeFilter}
-          />
-          <hr/>
-        </XUIColumn>
-      </XUIRow>
+                <XUIPanelSection className="xui-padding-large">
+                    <XUIPanelSectionHeading headingLevel={2}>General Query Filters</XUIPanelSectionHeading>
 
-      <XUIRow variant="grid" className="xui-margin-top">
-        <XUIColumn gridColumns={6}>
-          <HealthCheckToggle
-            isExcluded={state.excludeHealthChecks}
-            onChange={setExcludeHealthChecks}
-            useTimeseries={state.useTimeseries}
-            onTimeseriesChange={setUseTimeseries}
-          />
-        </XUIColumn>
-        <XUIColumn gridColumns={6}>
-          <FacetSelector
-            selectedFacet={state.facet}
-            onChange={setFacet}
-          />
-        </XUIColumn>
-      </XUIRow>
+                    <Flex gap="1rem" className="xui-margin-top-small">
+                        <FlexItem flex={1}>
+                            <ApplicationSelector
+                                selectedApplications={state.applications}
+                                onToggle={toggleApplication}
+                            />
+                        </FlexItem>
+                        <FlexItem flex={1}>
+                            <EnvironmentSelector
+                                selectedEnvironment={state.environment}
+                                onChange={setEnvironment}
+                            />
+                        </FlexItem>
+                        <FlexItem flex={1}>
+                            <TimePeriodSelector
+                                mode={state.timePeriod.mode}
+                                since={state.timePeriod.since}
+                                until={state.timePeriod.until}
+                                relative={state.timePeriod.relative}
+                                onModeChange={setTimeMode}
+                                onSinceChange={setSince}
+                                onUntilChange={setUntil}
+                                onRelativeChange={setRelative}
+                            />
+                        </FlexItem>
+                    </Flex>
+                </XUIPanelSection>
 
-      <XUIRow variant="grid" className="xui-margin-top-large">
-        <XUIColumn gridColumns={12}>
-          <QueryPreview query={query} />
-        </XUIColumn>
-      </XUIRow>
-    </div>
-  );
+                <XUIPanelSection className="xui-padding-large">
+                    <XUIPanelSectionHeading headingLevel={2}>Metric to Query</XUIPanelSectionHeading>
+
+                    <MetricQueryBuilder
+                        items={state.metricItems}
+                        onAddItem={addMetricItem}
+                        onRemoveItem={removeMetricItem}
+                        onUpdateItem={updateMetricItem}
+                        onAddFilter={addFilter}
+                        onUpdateFilter={updateFilter}
+                        onRemoveFilter={removeFilter}
+                    />
+                </XUIPanelSection>
+            </XUIPanel>
+
+
+            <Flex gap="1rem" className="xui-margin-top">
+                <FlexItem flex={1}>
+                    <HealthCheckToggle
+                        isExcluded={state.excludeHealthChecks}
+                        onChange={setExcludeHealthChecks}
+                        useTimeseries={state.useTimeseries}
+                        onTimeseriesChange={setUseTimeseries}
+                    />
+                </FlexItem>
+                <FlexItem flex={1}>
+                    <FacetSelector
+                        selectedFacet={state.facet}
+                        onChange={setFacet}
+                    />
+                </FlexItem>
+            </Flex>
+
+            <div className="xui-margin-top-large">
+                <QueryPreview query={query}/>
+            </div>
+        </div>
+    );
 }
 
 export default App;

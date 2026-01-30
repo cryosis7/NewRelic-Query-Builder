@@ -40,22 +40,19 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
     const isStatusField = isResponseStatusField(filter.field);
     const availableOperators = getOperatorsForField(filter.field);
     const placeholder = getPlaceholderForField(filter.field);
-    const hasEmptyValue = !filter.value.trim();
 
     return (
-        <Flex justify="start" align="start">
+        <Flex align="start">
             <FlexItem alignSelf="stretch" alignContent="center">
-                <Flex align="center" justify="center">
                     <XUIIconButton
                         className="xui-padding-xsmall-bottom"
-                        style={{width: '36px', height: '36px'}}
+                        style={{width: '36px', height: '36px', transform: 'translateY(+25%)'}}
                         ariaLabel="Remove filter"
                         iconSize="small"
                         iconColor={"red"}
                         icon={clear}
                         onClick={() => onRemove(metricItemId, filter.id)}
                     />
-                </Flex>
             </FlexItem>
 
             <FlexItem className="xui-padding-xsmall">
@@ -77,6 +74,7 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                     </XUISingleSelectOptions>
                 </XUISingleSelect>
             </FlexItem>
+
             {!isStatusField && (
                 <FlexItem className="xui-padding-xsmall">
                     <XUISingleSelect
@@ -98,6 +96,7 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                     </XUISingleSelect>
                 </FlexItem>
             )}
+
             <FlexItem grow className="xui-padding-xsmall">
                 <XUITextInput
                     label="Value"
@@ -107,7 +106,6 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
                     onChange={(event) =>
                         onUpdate(metricItemId, filter.id, {value: event.target.value})
                     }
-                    isInvalid={hasEmptyValue}
                 />
             </FlexItem>
         </Flex>

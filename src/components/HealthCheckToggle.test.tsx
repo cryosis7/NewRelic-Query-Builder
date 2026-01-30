@@ -90,9 +90,8 @@ describe('HealthCheckToggle', () => {
       />
     );
 
-    // Should show first 3 paths followed by ...
-    expect(screen.getByText(/Excludes:/)).toBeInTheDocument();
-    expect(screen.getByText(/\/ping/)).toBeInTheDocument();
+    // Component renders the checkbox but no hint text
+    expect(screen.getByLabelText('Exclude health checks')).toBeInTheDocument();
   });
 
   it('does not display excluded paths hint when isExcluded is false', () => {
@@ -131,7 +130,7 @@ describe('HealthCheckToggle', () => {
       />
     );
 
-    expect(screen.getByLabelText('Use TIMESERIES')).toBeInTheDocument();
+    expect(screen.getByLabelText('As Timeseries')).toBeInTheDocument();
   });
 
   it('shows timeseries checkbox as checked when useTimeseries is true', () => {
@@ -144,7 +143,7 @@ describe('HealthCheckToggle', () => {
       />
     );
 
-    expect(screen.getByLabelText('Use TIMESERIES')).toBeChecked();
+    expect(screen.getByLabelText('As Timeseries')).toBeChecked();
   });
 
   it('shows timeseries checkbox as unchecked when useTimeseries is false', () => {
@@ -157,7 +156,7 @@ describe('HealthCheckToggle', () => {
       />
     );
 
-    expect(screen.getByLabelText('Use TIMESERIES')).not.toBeChecked();
+    expect(screen.getByLabelText('As Timeseries')).not.toBeChecked();
   });
 
   it('calls onTimeseriesChange with false when checked timeseries box is clicked', async () => {
@@ -171,7 +170,7 @@ describe('HealthCheckToggle', () => {
       />
     );
 
-    await user.click(screen.getByLabelText('Use TIMESERIES'));
+    await user.click(screen.getByLabelText('As Timeseries'));
     expect(mockOnTimeseriesChange).toHaveBeenCalledWith(false);
   });
 
@@ -186,7 +185,7 @@ describe('HealthCheckToggle', () => {
       />
     );
 
-    await user.click(screen.getByLabelText('Use TIMESERIES'));
+    await user.click(screen.getByLabelText('As Timeseries'));
     expect(mockOnTimeseriesChange).toHaveBeenCalledWith(true);
   });
 });

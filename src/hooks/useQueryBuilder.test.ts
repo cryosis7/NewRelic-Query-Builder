@@ -179,10 +179,10 @@ describe('buildNrqlQuery', () => {
   });
 
   describe('timeseries', () => {
-    it('includes TIMESERIES 1 MINUTE when useTimeseries is true', () => {
+    it('includes TIMESERIES AUTO when useTimeseries is true', () => {
       const state = createTestState({ useTimeseries: true });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('TIMESERIES 1 MINUTE');
+      expect(result).toContain('TIMESERIES AUTO');
     });
 
     it('excludes TIMESERIES clause when useTimeseries is false', () => {
@@ -246,7 +246,7 @@ describe('buildNrqlQuery', () => {
       expect(result).toContain('WHERE');
       expect(result).toContain('appName in (');
       expect(result).toContain('request.uri not in (');
-      expect(result).toContain('TIMESERIES 1 MINUTE');
+      expect(result).toContain('TIMESERIES AUTO');
       expect(result).toContain('SINCE');
       expect(result).toContain('UNTIL');
       expect(result).toContain('FACET request.uri');

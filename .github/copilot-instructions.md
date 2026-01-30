@@ -36,5 +36,5 @@ npm run build      # Build
 ```tsx
 import XUICheckbox, { XUICheckboxGroup } from '@xero/xui/react/checkbox';
 import XUIButton from '@xero/xui/react/button';
-import { XUIRow, XUIColumn } from '@xero/xui/react/structural';
+import { Flex, FlexItem } from './components'; // For layouts
 ```

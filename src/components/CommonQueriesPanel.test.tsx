@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { CommonQueriesPanel } from './CommonQueriesPanel';
+import { CommonQueriesPanelSection } from './CommonQueriesPanelSection.tsx';
 import { QUERY_PRESETS } from '../data/presets';
 
 describe('CommonQueriesPanel', () => {
@@ -11,13 +11,13 @@ describe('CommonQueriesPanel', () => {
   });
 
   it('renders the Common Queries heading', () => {
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     expect(screen.getByText('Common Queries')).toBeInTheDocument();
   });
 
   it('renders all preset buttons', () => {
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     QUERY_PRESETS.forEach((preset) => {
       expect(screen.getByRole('button', { name: preset.name })).toBeInTheDocument();
@@ -25,7 +25,7 @@ describe('CommonQueriesPanel', () => {
   });
 
   it('renders buttons with title attribute containing description', () => {
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     QUERY_PRESETS.forEach((preset) => {
       const button = screen.getByRole('button', { name: preset.name });
@@ -35,7 +35,7 @@ describe('CommonQueriesPanel', () => {
 
   it('calls onSelectPreset with correct state when API Prod button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     await user.click(screen.getByRole('button', { name: 'API Prod - Last Hour' }));
     
@@ -49,7 +49,7 @@ describe('CommonQueriesPanel', () => {
 
   it('calls onSelectPreset with all apps when All Apps button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     await user.click(screen.getByRole('button', { name: 'All Apps Prod - Last Hour' }));
     
@@ -64,7 +64,7 @@ describe('CommonQueriesPanel', () => {
 
   it('calls onSelectPreset with UAT environment when UAT button is clicked', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     await user.click(screen.getByRole('button', { name: 'API UAT - Last Hour' }));
     
@@ -75,7 +75,7 @@ describe('CommonQueriesPanel', () => {
 
   it('includes timePeriod in preset state', async () => {
     const user = userEvent.setup();
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     await user.click(screen.getByRole('button', { name: 'API Prod - Last Hour' }));
     
@@ -87,7 +87,7 @@ describe('CommonQueriesPanel', () => {
   });
 
   it('renders exactly 7 preset buttons', () => {
-    render(<CommonQueriesPanel onSelectPreset={mockOnSelectPreset} />);
+    render(<CommonQueriesPanelSection onSelectPreset={mockOnSelectPreset} />);
     
     const buttons = screen.getAllByRole('button');
     expect(buttons).toHaveLength(7);

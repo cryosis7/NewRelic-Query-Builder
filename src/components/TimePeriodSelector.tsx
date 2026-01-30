@@ -7,10 +7,10 @@ import {
     XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
 import XUIRadio, {XUIRadioGroup} from '@xero/xui/react/radio';
-import {XUIRow, XUIColumn} from '@xero/xui/react/structural';
 import XUIDateInput from '@xero/xui/react/dateinput';
 import type {TimePeriodMode} from '../types/query';
 import React from "react";
+import { Flex, FlexItem } from './layout';
 
 interface TimePickerProps {
     value: string; // Format: "HH:mm"
@@ -85,8 +85,8 @@ export function DateTimeInput({value, onChange, label, id}: DateTimeInputProps) 
     return (
         <div id={id}>
             <div className="xui-text-label xui-fieldlabel-layout">{label}</div>
-            <XUIRow variant="flex">
-                <XUIColumn gridColumns="half">
+            <Flex gap="0.5rem">
+                <FlexItem flex={1}>
                     <XUIDateInput
                         inputLabel="Date"
                         datePickerAriaLabel="Choose date"
@@ -98,11 +98,11 @@ export function DateTimeInput({value, onChange, label, id}: DateTimeInputProps) 
                         onSelectDate={handleDateChange}
                         selectedDateValue={selectedDate}
                     />
-                </XUIColumn>
-                <XUIColumn gridColumns="half">
+                </FlexItem>
+                <FlexItem flex={1}>
                     <TimePicker value={time} onChange={handleTimeChange}/>
-                </XUIColumn>
-            </XUIRow>
+                </FlexItem>
+            </Flex>
         </div>
     );
 }

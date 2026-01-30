@@ -7,7 +7,7 @@ export { MetricItem } from './MetricItem';
 export { FilterRow } from './FilterRow';
 export { TimePeriodSelector } from './TimePeriodSelector';
 export { HealthCheckToggle } from './HealthCheckToggle';
-export { CommonQueriesPanel } from './CommonQueriesPanel';
+export { CommonQueriesPanelSection } from './CommonQueriesPanelSection.tsx';
 export { QueryPreview } from './QueryPreview';
 export { FacetSelector } from './FacetSelector';
 export { SectionRule } from './SectionRule';

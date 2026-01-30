@@ -2,6 +2,7 @@ import XUIButton from '@xero/xui/react/button';
 import type {FilterField, MetricFilter, MetricQueryItem} from '../types/query';
 import {MetricItem} from './MetricItem';
 import {SectionRule} from './SectionRule';
+import {Flex} from "./layout";
 
 interface MetricQueryBuilderProps {
     items: MetricQueryItem[];
@@ -23,8 +24,7 @@ export function MetricQueryBuilder({
                                        onRemoveFilter,
                                    }: MetricQueryBuilderProps) {
     return (
-        // <XUIControlGroup label="Metric Queries">
-        <div>
+        <Flex direction="column">
             {items.map((item, index) => {
                 const isSingleItem = items.length === 1;
                 const isLastItem = index === items.length - 1;
@@ -49,6 +49,6 @@ export function MetricQueryBuilder({
             <XUIButton variant="standard" onClick={onAddItem} fullWidth="always">
                 Add metric
             </XUIButton>
-        </div>
+        </Flex>
     );
 }

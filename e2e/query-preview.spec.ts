@@ -58,7 +58,7 @@ test.describe('Query Preview', () => {
       expect(queryText).toContain('FROM Transaction');
       expect(queryText).toContain('count(*)');
       expect(queryText).toContain("appName in ('global-tax-mapper-api-prod')");
-      expect(queryText).toContain('TIMESERIES 1 MINUTE');
+      expect(queryText).toContain('TIMESERIES AUTO');
       expect(queryText).toContain('FACET request.uri');
     });
 
@@ -149,7 +149,7 @@ test.describe('Console Errors Check', () => {
     await page.waitForLoadState('networkidle');
 
     // Add a filter - this was observed to cause SVG errors
-    await page.getByRole('button', { name: '+ Add filter' }).click();
+    await page.getByRole('button', { name: 'Add Filter' }).click();
     await page.waitForTimeout(500);
 
     // Filter for SVG-related errors (known issue)

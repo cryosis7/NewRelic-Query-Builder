@@ -11,8 +11,11 @@ test.describe('Time Period Selection', () => {
 
   test.describe('Absolute/Exact Time Mode', () => {
     test('3.1.1 Default mode - Exact radio is selected with Since/Until inputs visible', async ({ page }) => {
-      // Exact radio should be checked by default
+      // Switch to Exact mode first (default is Relative)
       const exactRadio = page.getByRole('radio', { name: 'Exact' });
+      await exactRadio.click();
+
+      // Exact radio should now be checked
       await expect(exactRadio).toBeChecked();
 
       // Relative radio should not be checked
@@ -36,6 +39,9 @@ test.describe('Time Period Selection', () => {
     });
 
     test('3.1.2 Time inputs update the query', async ({ page }) => {
+      // Switch to Exact mode first (default is Relative)
+      await page.getByRole('radio', { name: 'Exact' }).click();
+
       // Get the Since time input and clear it, then type a new time
       const sinceTimeInput = page.getByRole('textbox', { name: 'Time' }).first();
       
@@ -71,13 +77,11 @@ test.describe('Time Period Selection', () => {
       await expect(timePeriodGroup.getByText('Until')).not.toBeVisible();
     });
 
-    test('3.2.2 Default relative value - Shows "1 hour ago" type query', async ({ page }) => {
-      // Switch to relative mode
-      await page.getByRole('radio', { name: 'Relative' }).click();
-
-      // Default value should be "1h ago"
+    test('3.2.2 Default relative value - Shows "3 hours ago" type query', async ({ page }) => {
+      // Default mode is already Relative, so no need to switch
+      // Default value should be "3h ago"
       const relativeInput = page.getByRole('textbox', { name: 'Relative' });
-      await expect(relativeInput).toHaveValue('1h ago');
+      await expect(relativeInput).toHaveValue('3h ago');
 
       // Query should show SINCE ... ago UNTIL now
       const queryPreview = getQueryPreview(page);
