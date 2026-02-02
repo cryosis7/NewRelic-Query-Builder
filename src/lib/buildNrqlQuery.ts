@@ -10,7 +10,7 @@ import {HEALTH_CHECK_PATHS, getFieldByName} from '../types/query';
 export function getDefaultTimePeriod(): TimePeriod {
   return {
     mode: 'relative',
-    relative: '3h ago',
+    relative: '3h ago'
   };
 }
 
@@ -309,8 +309,7 @@ export function buildNrqlQuery(state: QueryState): string {
 }
 
 function buildMetricSelect(item: MetricQueryItem): string {
-  const fieldDef = getFieldByName(item.field);
-  
+
   switch (item.aggregationType) {
     case 'average':
       return `average(${item.field})`;
@@ -319,6 +318,5 @@ function buildMetricSelect(item: MetricQueryItem): string {
     case 'count':
       return `count(${item.field})`;
   }
-  
-  return `count(${item.field})`;
 }
+

@@ -9,7 +9,7 @@ Always delegate development tasks to subagents rather than performing them seque
 
 ## When to Delegate
 
-- **Code changes**: Delegate implementation work to subagents
+- **Edit Files**: Delegate implementation work to subagents
 - **Test updates**: After any coding task, delegate test updates as a follow-up task
 - **Independent tasks**: Launch multiple subagents in parallel when tasks don't depend on each other
 - **Dependent tasks**: Launch a subagent to complete a task and wait for it to complete before launching the next task
@@ -25,9 +25,9 @@ Each delegated task must include:
 ## Pattern
 
 ```
-1. Receive coding task
+1. Receive task
 2. Delegate implementation to subagent(s)
-3. Delegate test updates to subagent(s)
+3. Was code updated? Delegate test updates to subagent(s)
 4. Review results
 ```
 

@@ -20,7 +20,21 @@ export {
 } from './metricItems';
 
 // Derived atoms
-export { nrqlQueryAtom } from './derived';
+export {
+  nrqlQueryAtom,
+  sinceDateAtom,
+  sinceTimeAtom,
+  untilDateAtom,
+  untilTimeAtom,
+  initializeTimePeriodAtom,
+} from './derived';
 
 // Action atoms
-export { applyPresetAtom, resetAtom } from './actions';
+export {
+  applyPresetAtom,
+  resetAtom,
+  setTimePeriodModeAtom,
+  setTimePeriodSinceAtom,
+  setTimePeriodUntilAtom,
+  setTimePeriodRelativeAtom,
+} from './actions';

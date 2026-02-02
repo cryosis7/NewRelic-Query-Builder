@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { QueryState } from '../types/query';
+import type { QueryState, TimePeriodMode } from '../types/query';
 import { getInitialState } from '../lib/buildNrqlQuery';
 import {
   applicationsAtom,
@@ -13,7 +13,7 @@ import { metricItemsAtom } from './metricItems';
 
 export const applyPresetAtom = atom(
   null,
-  (get, set, preset: Partial<QueryState>) => {
+  (_get, set, preset: Partial<QueryState>) => {
     if (preset.applications !== undefined) set(applicationsAtom, preset.applications);
     if (preset.environment !== undefined) set(environmentAtom, preset.environment);
     if (preset.metricItems !== undefined) set(metricItemsAtom, preset.metricItems);
@@ -26,7 +26,7 @@ export const applyPresetAtom = atom(
 
 export const resetAtom = atom(
   null,
-  (get, set) => {
+  (_get, set) => {
     const initial = getInitialState();
     set(applicationsAtom, initial.applications);
     set(environmentAtom, initial.environment);
@@ -35,5 +35,37 @@ export const resetAtom = atom(
     set(excludeHealthChecksAtom, initial.excludeHealthChecks);
     set(useTimeseriesAtom, initial.useTimeseries);
     set(facetAtom, initial.facet);
+  }
+);
+
+export const setTimePeriodModeAtom = atom(
+  null,
+  (get, set, mode: TimePeriodMode) => {
+    const current = get(timePeriodAtom);
+    set(timePeriodAtom, { ...current, mode });
+  }
+);
+
+export const setTimePeriodSinceAtom = atom(
+  null,
+  (get, set, since: string) => {
+    const current = get(timePeriodAtom);
+    set(timePeriodAtom, { ...current, since });
+  }
+);
+
+export const setTimePeriodUntilAtom = atom(
+  null,
+  (get, set, until: string) => {
+    const current = get(timePeriodAtom);
+    set(timePeriodAtom, { ...current, until });
+  }
+);
+
+export const setTimePeriodRelativeAtom = atom(
+  null,
+  (get, set, relative: string) => {
+    const current = get(timePeriodAtom);
+    set(timePeriodAtom, { ...current, relative });
   }
 );

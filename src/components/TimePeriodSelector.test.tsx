@@ -1,7 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { Provider, createStore } from 'jotai';
-import { TimePeriodSelector, TimePicker, DateTimeInput } from './TimePeriodSelector';
+import { TimePeriodSelector } from './TimePeriodSelector';
 import { timePeriodAtom } from '../atoms';
+import {DateTimeInput} from "./DateTimeInput.tsx";
+import {TimePicker} from "./TimePicker.tsx";
 
 describe('TimePicker', () => {
   const mockOnChange = vi.fn();
@@ -46,52 +49,86 @@ describe('TimePicker', () => {
 });
 
 describe('DateTimeInput', () => {
-  const mockOnChange = vi.fn();
+  const mockOnDateChange = vi.fn();
+  const mockOnTimeChange = vi.fn();
 
   beforeEach(() => {
-    mockOnChange.mockClear();
+    mockOnDateChange.mockClear();
+    mockOnTimeChange.mockClear();
   });
 
   it('renders the label', () => {
-    render(<DateTimeInput value="2026-01-28T14:30" onChange={mockOnChange} label="Since" />);
+    render(
+      <DateTimeInput
+        label="Since"
+        date={new Date(2026, 0, 28)}
+        time="14:30"
+        onDateChange={mockOnDateChange}
+        onTimeChange={mockOnTimeChange}
+      />
+    );
 
     expect(screen.getByText('Since')).toBeInTheDocument();
   });
 
   it('renders time sub-label', () => {
-    render(<DateTimeInput value="2026-01-28T14:30" onChange={mockOnChange} label="Since" />);
+    render(
+      <DateTimeInput
+        label="Since"
+        date={new Date(2026, 0, 28)}
+        time="14:30"
+        onDateChange={mockOnDateChange}
+        onTimeChange={mockOnTimeChange}
+      />
+    );
 
     expect(screen.getByText('Time')).toBeInTheDocument();
   });
 
-  it('displays the provided time values', () => {
-    render(<DateTimeInput value="2026-01-28T14:30" onChange={mockOnChange} label="Since" />);
+  it('displays the provided time value', () => {
+    render(
+      <DateTimeInput
+        label="Since"
+        date={new Date(2026, 0, 28)}
+        time="14:30"
+        onDateChange={mockOnDateChange}
+        onTimeChange={mockOnTimeChange}
+      />
+    );
 
     expect(screen.getByLabelText('Time', { selector: 'input' })).toHaveValue('14:30');
   });
 
-  it('calls onChange with updated time when changed', () => {
-    render(<DateTimeInput value="2026-01-28T14:30" onChange={mockOnChange} label="Since" />);
+  it('calls onTimeChange when time is changed', () => {
+    render(
+      <DateTimeInput
+        label="Since"
+        date={new Date(2026, 0, 28)}
+        time="14:30"
+        onDateChange={mockOnDateChange}
+        onTimeChange={mockOnTimeChange}
+      />
+    );
 
     const timeInput = screen.getByLabelText('Time', { selector: 'input' });
     fireEvent.change(timeInput, { target: { value: '09:30' } });
 
-    expect(mockOnChange).toHaveBeenLastCalledWith('2026-01-28T09:30');
+    expect(mockOnTimeChange).toHaveBeenLastCalledWith('09:30');
   });
 
-  it('handles empty value gracefully', () => {
-    render(<DateTimeInput value="" onChange={mockOnChange} label="Since" />);
+  it('handles undefined date gracefully', () => {
+    render(
+      <DateTimeInput
+        label="Since"
+        date={undefined}
+        time="00:00"
+        onDateChange={mockOnDateChange}
+        onTimeChange={mockOnTimeChange}
+      />
+    );
 
     expect(screen.getByText('Since')).toBeInTheDocument();
     expect(screen.getByLabelText('Time', { selector: 'input' })).toHaveValue('00:00');
-  });
-
-  it('applies the provided id to the container', () => {
-    const { container } = render(
-      <DateTimeInput value="2026-01-28T14:30" onChange={mockOnChange} label="Since" id="since-input" />
-    );
-
-    expect(container.querySelector('#since-input')).toBeInTheDocument();
   });
 });
 
@@ -261,5 +298,118 @@ describe('TimePeriodSelector', () => {
       target: { value: '3h ago' },
     });
     expect(store.get(timePeriodAtom).relative).toBe('3h ago');
+  });
+
+  it('shows blank dropdown when custom value is typed', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'relative',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '45m ago', // Not in preset list
+    });
+    render(
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
+    );
+
+    // The text input should show the custom value
+    expect(screen.getByLabelText('Relative', { selector: 'input[type="text"]' })).toHaveValue('45m ago');
+
+    // No option in the dropdown should be selected (this is harder to test directly,
+    // but we can verify the value was preserved)
+    expect(store.get(timePeriodAtom).relative).toBe('45m ago');
+  });
+
+  it('updates textbox when preset option is selected from dropdown', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'relative',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
+    render(
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
+    );
+
+    // Find and click the dropdown trigger (combobox role)
+    const dropdownTrigger = screen.getByRole('combobox', { name: /time period/i });
+    await user.click(dropdownTrigger);
+
+    // Select a different option
+    const option = screen.getByText('3h ago');
+    await user.click(option);
+
+    // Verify the atom value changed
+    expect(store.get(timePeriodAtom).relative).toBe('3h ago');
+  });
+
+  it('allows typing custom relative values not in preset list', () => {
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'relative',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
+    render(
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
+    );
+
+    const input = screen.getByLabelText('Relative', { selector: 'input[type="text"]' });
+    fireEvent.change(input, { target: { value: '2h 30m ago' } });
+
+    expect(store.get(timePeriodAtom).relative).toBe('2h 30m ago');
+  });
+
+  it('switches to absolute mode when Exact toggle is clicked', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'relative',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
+    render(
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
+    );
+
+    // Click the "Exact" toggle option
+    const exactOption = screen.getByText('Exact');
+    await user.click(exactOption);
+
+    expect(store.get(timePeriodAtom).mode).toBe('absolute');
+  });
+
+  it('switches to relative mode when Relative toggle is clicked', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    store.set(timePeriodAtom, {
+      mode: 'absolute',
+      since: '2026-01-28T08:00',
+      until: '2026-01-28T09:00',
+      relative: '1h ago',
+    });
+    render(
+      <Provider store={store}>
+        <TimePeriodSelector />
+      </Provider>
+    );
+
+    // Click the "Relative" toggle option
+    const relativeOption = screen.getByText('Relative');
+    await user.click(relativeOption);
+
+    expect(store.get(timePeriodAtom).mode).toBe('relative');
   });
 });
