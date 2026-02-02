@@ -40,6 +40,7 @@ export interface QueryState {
   metricItems: MetricQueryItem[];
   timePeriod: TimePeriod;
   excludeHealthChecks: boolean;
+  excludeBulkEndpoint: boolean;
   useTimeseries: boolean;
   facet: FacetOption;
 }
@@ -124,5 +125,6 @@ export const HEALTH_CHECK_PATHS = [
   '/healthcheck',
   '/secure-ping',
   '/ready',
-  '/accountsV2/bulk',
 ];
+
+export const BULK_ENDPOINT_PATHS = ['/accountsV2/bulk'];

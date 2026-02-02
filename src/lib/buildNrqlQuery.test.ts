@@ -1,5 +1,6 @@
-import { buildNrqlQuery, createMetricItem, getInitialState } from './buildNrqlQuery';
-import type { QueryState, MetricFilter } from '../types/query';
+import {buildNrqlQuery} from './buildNrqlQuery';
+import type {MetricFilter, MetricQueryItem, QueryState} from '../types/query';
+import {BULK_ENDPOINT_PATHS, HEALTH_CHECK_PATHS} from '../types/query';
 
 function createTestFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
   return {
@@ -12,29 +13,97 @@ function createTestFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
   };
 }
 
+function createTestMetric(overrides: Partial<MetricQueryItem> = {}): MetricQueryItem {
+  return {
+    id: 'metric-1',
+    field: 'duration',
+    aggregationType: 'count',
+    filters: [],
+    ...overrides,
+  };
+}
+
 function createTestState(overrides: Partial<QueryState> = {}): QueryState {
   return {
     applications: ['global-tax-mapper-api'],
     environment: 'prod',
-    metricItems: [
-      {
-        id: 'metric-1',
-        field: 'duration',
-        aggregationType: 'count',
-        filters: [],
-      },
-    ],
+    metricItems: [createTestMetric()],
     timePeriod: {
-      mode: 'absolute',
+      mode: 'relative',
       since: '2026-01-28T08:00',
       until: '2026-01-28T09:00',
       relative: '1h ago',
     },
-    excludeHealthChecks: true,
-    useTimeseries: true,
-    facet: 'request.uri',
+    excludeHealthChecks: false,
+    excludeBulkEndpoint: false,
+    useTimeseries: false,
+    facet: 'none',
     ...overrides,
   };
+}
+
+// Helper to build expected query strings for comparison
+interface ExpectedQueryOptions {
+  select: string;
+  apps: string[];
+  environment?: string;
+  excludeHealthChecks?: boolean;
+  excludeBulkEndpoint?: boolean;
+  additionalWhereConditions?: string[];
+  timeseries?: boolean;
+  since?: string;
+  until?: string;
+  facet?: string;
+}
+
+function buildExpectedQuery(options: ExpectedQueryOptions): string {
+  const {
+    select,
+    apps,
+    environment = 'prod',
+    excludeHealthChecks = false,
+    excludeBulkEndpoint = false,
+    additionalWhereConditions = [],
+    timeseries = false,
+    since = 'SINCE 1 hours ago',
+    until = 'UNTIL now',
+    facet,
+  } = options;
+
+  const appNames = apps.map(app => `'${app}-${environment}'`).join(', ');
+  const whereConditions: string[] = [`appName IN (${appNames})`];
+
+  if (excludeHealthChecks && excludeBulkEndpoint) {
+    const paths = [...HEALTH_CHECK_PATHS, ...BULK_ENDPOINT_PATHS].map(p => `'${p}'`).join(', ');
+    whereConditions.push(`request.uri NOT IN (${paths})`);
+  } else if (excludeHealthChecks) {
+    const paths = HEALTH_CHECK_PATHS.map(p => `'${p}'`).join(', ');
+    whereConditions.push(`request.uri NOT IN (${paths})`);
+  } else if (excludeBulkEndpoint) {
+    const paths = BULK_ENDPOINT_PATHS.map(p => `'${p}'`).join(', ');
+    whereConditions.push(`request.uri NOT IN (${paths})`);
+  }
+
+  whereConditions.push(...additionalWhereConditions);
+
+  const parts = [
+    'FROM Transaction',
+    `SELECT ${select}`,
+    `WHERE ${whereConditions.join(' AND ')}`,
+  ];
+
+  if (timeseries) {
+    parts.push('TIMESERIES AUTO');
+  }
+
+  parts.push(since);
+  parts.push(until);
+
+  if (facet) {
+    parts.push(`FACET ${facet}`);
+  }
+
+  return parts.join('\n');
 }
 
 describe('buildNrqlQuery', () => {
@@ -51,135 +120,183 @@ describe('buildNrqlQuery', () => {
         environment: 'prod',
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("appName IN ('global-tax-mapper-api-prod')");
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        environment: 'prod',
+      });
+      expect(result).toBe(expected);
     });
 
-    it('formats multiple applications as comma-separated list in appName in()', () => {
+    it('formats multiple applications as comma-separated list in appName IN()', () => {
       const state = createTestState({
         applications: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
         environment: 'prod',
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("appName IN ('global-tax-mapper-api-prod', 'global-tax-mapper-bff-prod')");
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
+        environment: 'prod',
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('formats all three applications correctly', () => {
+      const state = createTestState({
+        applications: ['global-tax-mapper-api', 'global-tax-mapper-bff', 'global-tax-mapper-integrator-api'],
+        environment: 'prod',
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api', 'global-tax-mapper-bff', 'global-tax-mapper-integrator-api'],
+        environment: 'prod',
+      });
+      expect(result).toBe(expected);
     });
   });
 
   describe('environments', () => {
-    it('applies prod suffix correctly', () => {
+    it.each`
+      environment | label
+      ${'prod'}   | ${'applies prod suffix correctly'}
+      ${'uat'}    | ${'applies uat suffix correctly'}
+    `('$label', ({ environment }) => {
       const state = createTestState({
         applications: ['global-tax-mapper-api'],
-        environment: 'prod',
+        environment,
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("'global-tax-mapper-api-prod'");
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        environment,
+      });
+      expect(result).toBe(expected);
     });
 
-    it('applies uat suffix correctly', () => {
+    it('applies environment suffix to multiple applications', () => {
       const state = createTestState({
-        applications: ['global-tax-mapper-api'],
+        applications: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
         environment: 'uat',
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("'global-tax-mapper-api-uat'");
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
+        environment: 'uat',
+      });
+      expect(result).toBe(expected);
     });
   });
 
   describe('metric fields', () => {
-    it('generates SELECT average(duration) for duration field with average aggregation', () => {
+    it.each`
+      field                | aggregationType | expectedSelect
+      ${'duration'}        | ${'average'}    | ${'average(duration)'}
+      ${'duration'}        | ${'count'}      | ${'count(duration)'}
+      ${'duration'}        | ${'p95'}        | ${'percentile(duration, 95)'}
+      ${'response.status'} | ${'count'}      | ${'count(response.status)'}
+    `('generates SELECT $expectedSelect for $field field with $aggregationType aggregation', ({ field, aggregationType, expectedSelect }) => {
       const state = createTestState({
-        metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'average',
-            filters: [],
-          },
-        ],
+        metricItems: [createTestMetric({ field, aggregationType })],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT average(duration)');
-      expect(result).not.toContain('count(duration)');
+      const expected = buildExpectedQuery({
+        select: expectedSelect,
+        apps: ['global-tax-mapper-api'],
+      });
+      expect(result).toBe(expected);
     });
 
-    it('generates SELECT count(duration) for duration field with count aggregation', () => {
+    it('generates multiple SELECT clauses for multiple metrics', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
-            filters: [],
-          },
+          createTestMetric({ id: 'metric-1', field: 'duration', aggregationType: 'count' }),
+          createTestMetric({ id: 'metric-2', field: 'duration', aggregationType: 'average' }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(duration)');
-      expect(result).not.toContain('average(duration)');
+      const expected = buildExpectedQuery({
+        select: 'count(duration), average(duration)',
+        apps: ['global-tax-mapper-api'],
+      });
+      expect(result).toBe(expected);
     });
 
-    it('generates SELECT percentile(duration, 95) for duration field with p95 aggregation', () => {
-      const state = createTestState({
-        metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'p95',
-            filters: [],
-          },
-        ],
-      });
+    it('returns comment when no metrics are selected', () => {
+      const state = createTestState({ metricItems: [] });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT percentile(duration, 95)');
-    });
-
-    it('generates SELECT count(response.status) for response.status field', () => {
-      const state = createTestState({
-        metricItems: [
-          {
-            id: 'metric-1',
-            field: 'response.status',
-            aggregationType: 'count',
-            filters: [],
-          },
-        ],
-      });
-      const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(response.status)');
+      expect(result).toBe('-- Select at least one metric');
     });
   });
 
-  describe('health check exclusion', () => {
-    it('includes request.uri not in clause when excludeHealthChecks is true', () => {
-      const state = createTestState({ excludeHealthChecks: true });
+  describe('path exclusions', () => {
+    it.each`
+      excludeHealthChecks | label
+      ${true}             | ${'includes health check paths exclusion when excludeHealthChecks is true'}
+      ${false}            | ${'omits health check path exclusion when excludeHealthChecks is false'}
+    `('$label', ({ excludeHealthChecks }) => {
+      const state = createTestState({ excludeHealthChecks, excludeBulkEndpoint: false });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('request.uri NOT IN (');
-      expect(result).toContain("'/ping'");
-      expect(result).toContain("'/health'");
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        excludeHealthChecks,
+        excludeBulkEndpoint: false,
+      });
+      expect(result).toBe(expected);
     });
 
-    it('does not include request.uri not in clause when excludeHealthChecks is false', () => {
-      const state = createTestState({ excludeHealthChecks: false });
+    it.each`
+      excludeBulkEndpoint | label
+      ${true}             | ${'includes bulk endpoint path exclusion when excludeBulkEndpoint is true'}
+      ${false}            | ${'omits bulk endpoint path exclusion when excludeBulkEndpoint is false'}
+    `('$label', ({ excludeBulkEndpoint }) => {
+      const state = createTestState({ excludeHealthChecks: false, excludeBulkEndpoint });
       const result = buildNrqlQuery(state);
-      expect(result).not.toContain('request.uri NOT IN');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        excludeHealthChecks: false,
+        excludeBulkEndpoint,
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('combines health check and bulk endpoint exclusions into single NOT IN', () => {
+      const state = createTestState({ excludeHealthChecks: true, excludeBulkEndpoint: true });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        excludeHealthChecks: true,
+        excludeBulkEndpoint: true,
+      });
+      expect(result).toBe(expected);
     });
   });
 
   describe('timeseries', () => {
-    it('includes TIMESERIES AUTO when useTimeseries is true', () => {
-      const state = createTestState({ useTimeseries: true });
+    it.each`
+      useTimeseries | label
+      ${true}       | ${'includes TIMESERIES AUTO when useTimeseries is true'}
+      ${false}      | ${'excludes TIMESERIES clause when useTimeseries is false'}
+    `('$label', ({ useTimeseries }) => {
+      const state = createTestState({ useTimeseries });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('TIMESERIES AUTO');
-    });
-
-    it('excludes TIMESERIES clause when useTimeseries is false', () => {
-      const state = createTestState({ useTimeseries: false });
-      const result = buildNrqlQuery(state);
-      expect(result).not.toContain('TIMESERIES');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        timeseries: useTimeseries,
+      });
+      expect(result).toBe(expected);
     });
   });
 
   describe('time formatting', () => {
-    it('formats SINCE clause in NRQL format', () => {
+    it('formats absolute SINCE and UNTIL clauses in NRQL format with timezone', () => {
       const state = createTestState({
         timePeriod: {
           mode: 'absolute',
@@ -189,21 +306,8 @@ describe('buildNrqlQuery', () => {
         },
       });
       const result = buildNrqlQuery(state);
-      // Should contain SINCE with the formatted date (timezone depends on local env)
+      // Timezone depends on local env, so we match the pattern
       expect(result).toMatch(/SINCE '2026-01-28 08:00:00 [+-]\d{2}:\d{2}'/);
-    });
-
-    it('formats UNTIL clause in NRQL format', () => {
-      const state = createTestState({
-        timePeriod: {
-          mode: 'absolute',
-          since: '2026-01-28T08:00',
-          until: '2026-01-28T09:00',
-          relative: '1h ago',
-        },
-      });
-      const result = buildNrqlQuery(state);
-      // Should contain UNTIL with the formatted date (timezone depends on local env)
       expect(result).toMatch(/UNTIL '2026-01-28 09:00:00 [+-]\d{2}:\d{2}'/);
     });
   });
@@ -213,66 +317,61 @@ describe('buildNrqlQuery', () => {
       const state = createTestState({
         applications: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
         environment: 'prod',
-        metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
-            filters: [],
-          },
-        ],
+        metricItems: [createTestMetric({ field: 'duration', aggregationType: 'count' })],
         excludeHealthChecks: true,
+        excludeBulkEndpoint: true,
+        useTimeseries: true,
         facet: 'request.uri',
       });
       const result = buildNrqlQuery(state);
-
-      // Verify all parts are present
-      expect(result).toContain('FROM Transaction');
-      expect(result).toContain('SELECT count(duration)');
-      expect(result).toContain('WHERE');
-      expect(result).toContain('appName IN (');
-      expect(result).toContain('request.uri NOT IN (');
-      expect(result).toContain('TIMESERIES AUTO');
-      expect(result).toContain('SINCE');
-      expect(result).toContain('UNTIL');
-      expect(result).toContain('FACET request.uri');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
+        environment: 'prod',
+        excludeHealthChecks: true,
+        excludeBulkEndpoint: true,
+        timeseries: true,
+        facet: 'request.uri',
+      });
+      expect(result).toBe(expected);
     });
 
-    it('joins WHERE conditions with and', () => {
-      const state = createTestState({ excludeHealthChecks: true });
+    it('generates query with minimal options', () => {
+      const state = createTestState({
+        applications: ['global-tax-mapper-api'],
+        environment: 'prod',
+        metricItems: [createTestMetric()],
+        excludeHealthChecks: false,
+        excludeBulkEndpoint: false,
+        useTimeseries: false,
+        facet: 'none',
+      });
       const result = buildNrqlQuery(state);
-      expect(result).toMatch(/appName IN \([^)]+\) AND request\.uri NOT IN/);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        environment: 'prod',
+      });
+      expect(result).toBe(expected);
     });
   });
   describe('faceting', () => {
-    it('includes FACET clause when facet is set to request.uri', () => {
-      const state = createTestState({ facet: 'request.uri' });
+    it.each`
+      facet                | expectedFacet        | label
+      ${'request.uri'}     | ${'request.uri'}     | ${'includes FACET clause when facet is set to request.uri'}
+      ${'response.status'} | ${'response.status'} | ${'includes FACET clause when facet is set to response.status'}
+      ${'http.method'}     | ${'http.method'}     | ${'includes FACET clause when facet is set to http.method'}
+      ${'name'}            | ${'name'}            | ${'includes FACET clause when facet is set to name'}
+      ${'none'}            | ${undefined}         | ${'excludes FACET clause when facet is set to none'}
+    `('$label', ({ facet, expectedFacet }) => {
+      const state = createTestState({ facet });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('FACET request.uri');
-    });
-
-    it('includes FACET clause when facet is set to response.status', () => {
-      const state = createTestState({ facet: 'response.status' });
-      const result = buildNrqlQuery(state);
-      expect(result).toContain('FACET response.status');
-    });
-
-    it('includes FACET clause when facet is set to http.method', () => {
-      const state = createTestState({ facet: 'http.method' });
-      const result = buildNrqlQuery(state);
-      expect(result).toContain('FACET http.method');
-    });
-
-    it('includes FACET clause when facet is set to name', () => {
-      const state = createTestState({ facet: 'name' });
-      const result = buildNrqlQuery(state);
-      expect(result).toContain('FACET name');
-    });
-
-    it('excludes FACET clause when facet is set to none', () => {
-      const state = createTestState({ facet: 'none' });
-      const result = buildNrqlQuery(state);
-      expect(result).not.toContain('FACET');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        ...(expectedFacet && { facet: expectedFacet }),
+      });
+      expect(result).toBe(expected);
     });
   });
   describe('relative time periods', () => {
@@ -286,8 +385,13 @@ describe('buildNrqlQuery', () => {
         },
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SINCE 3 hours ago');
-      expect(result).toContain('UNTIL now');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        since: 'SINCE 3 hours ago',
+        until: 'UNTIL now',
+      });
+      expect(result).toBe(expected);
     });
 
     it('returns a helpful comment for invalid relative input', () => {
@@ -302,50 +406,110 @@ describe('buildNrqlQuery', () => {
       const result = buildNrqlQuery(state);
       expect(result).toBe('-- Enter a valid relative time (e.g., 3h ago)');
     });
+
+    it('parses minutes input correctly', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '30m ago' },
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        since: 'SINCE 30 minutes ago',
+        until: 'UNTIL now',
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('parses days input correctly', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '7d ago' },
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        since: 'SINCE 7 days ago',
+        until: 'UNTIL now',
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('parses long-form time units', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '2 hours ago' },
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        since: 'SINCE 2 hours ago',
+        until: 'UNTIL now',
+      });
+      expect(result).toBe(expected);
+    });
   });
 
   describe('metric filters', () => {
     it('uses global WHERE when only one metric has a filter', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
+          createTestMetric({
             filters: [createTestFilter({ value: '0.5' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(duration)');
-      expect(result).toContain('WHERE');
-      expect(result).toContain('duration > 0.5');
-      expect(result).not.toContain('filter(count(duration)');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['duration > 0.5'],
+      });
+      expect(result).toBe(expected);
     });
 
     it('uses filter() when a metric filter would conflict with another metric', () => {
       const state = createTestState({
         metricItems: [
-          {
+          createTestMetric({
             id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
             filters: [createTestFilter({ value: '0.5' })],
-          },
-          {
+          }),
+          createTestMetric({
             id: 'metric-2',
-            field: 'duration',
             aggregationType: 'average',
             filters: [],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT filter(count(duration), WHERE duration > 0.5), average(duration)');
-      // Verify duration > 0.5 doesn't appear in the global WHERE clause (only inside filter())
-      // The global WHERE should only contain appName and request.uri conditions
-      expect(result).toMatch(/WHERE appName IN/);
-      expect(result).not.toMatch(/WHERE appName[^]*duration > 0\.5[^]*TIMESERIES/);
+      const expected = buildExpectedQuery({
+        select: 'filter(count(duration), WHERE duration > 0.5), average(duration)',
+        apps: ['global-tax-mapper-api'],
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('wraps only the metric with filters when others have none', () => {
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            id: 'metric-1',
+            filters: [],
+          }),
+          createTestMetric({
+            id: 'metric-2',
+            aggregationType: 'average',
+            filters: [createTestFilter({ id: 'f2', value: '1.0' })],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration), filter(average(duration), WHERE duration > 1.0)',
+        apps: ['global-tax-mapper-api'],
+      });
+      expect(result).toBe(expected);
     });
   });
 
@@ -353,121 +517,145 @@ describe('buildNrqlQuery', () => {
     it('filters single exact status code with =', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('response.status = 404');
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['response.status = 404'],
+      });
+      expect(result).toBe(expected);
     });
 
     it('filters multiple exact status codes with IN', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 500' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('response.status IN (404, 503, 500)');
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['response.status IN (404, 503, 500)'],
+      });
+      expect(result).toBe(expected);
     });
 
     it('filters single fuzzy status code with LIKE (4xx format)', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("response.status LIKE '4%'");
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ["response.status LIKE '4%'"],
+      });
+      expect(result).toBe(expected);
     });
 
     it('filters single fuzzy status code with LIKE (4% format)', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4%' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("response.status LIKE '4%'");
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ["response.status LIKE '4%'"],
+      });
+      expect(result).toBe(expected);
     });
 
     it('filters mixed exact and fuzzy codes with OR grouping', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '503, 4xx' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("(response.status = 503 OR response.status LIKE '4%')");
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ["(response.status = 503 OR response.status LIKE '4%')"],
+      });
+      expect(result).toBe(expected);
     });
 
     it('filters multiple exact and fuzzy codes with OR grouping', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 4xx, 5xx' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("(response.status IN (404, 503) OR response.status LIKE '4%' OR response.status LIKE '5%')");
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ["(response.status IN (404, 503) OR response.status LIKE '4%' OR response.status LIKE '5%')"],
+      });
+      expect(result).toBe(expected);
     });
 
     it('filters multiple fuzzy codes with OR grouping', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx, 5xx' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("(response.status LIKE '4%' OR response.status LIKE '5%')");
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ["(response.status LIKE '4%' OR response.status LIKE '5%')"],
+      });
+      expect(result).toBe(expected);
     });
 
     it('handles whitespace in comma-separated values', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
+          createTestMetric({
             field: 'response.status',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: ' 404 , 503 , 500 ' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('response.status IN (404, 503, 500)');
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['response.status IN (404, 503, 500)'],
+      });
+      expect(result).toBe(expected);
     });
   });
 
@@ -475,105 +663,135 @@ describe('buildNrqlQuery', () => {
     it('combines multiple filters with AND', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
+          createTestMetric({
             filters: [
               createTestFilter({ id: 'filter-1', field: 'response.status', operator: '=', value: '200' }),
               createTestFilter({ id: 'filter-2', field: 'duration', operator: '>', value: '0.5' }),
             ],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('response.status = 200');
-      expect(result).toContain('duration > 0.5');
-      expect(result).toContain(' AND ');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['response.status = 200 AND duration > 0.5'],
+      });
+      expect(result).toBe(expected);
     });
 
     it('ignores empty filter values', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
+          createTestMetric({
             filters: [
               createTestFilter({ id: 'filter-1', field: 'duration', operator: '>', value: '0.5' }),
               createTestFilter({ id: 'filter-2', field: 'response.status', operator: '=', value: '' }),
             ],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('duration > 0.5');
-      expect(result).not.toContain('response.status');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['duration > 0.5'],
+      });
+      expect(result).toBe(expected);
     });
 
     it('generates no filter when all filters have empty values', () => {
       const state = createTestState({
         metricItems: [
-          {
-            id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
+          createTestMetric({
             filters: [
               createTestFilter({ id: 'filter-1', field: 'duration', operator: '>', value: '' }),
-              createTestFilter({ id: 'filter-2', field: 'response.status', operator: '=', value: '   ' })],
-          },
+              createTestFilter({ id: 'filter-2', field: 'response.status', operator: '=', value: '   ' }),
+            ],
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(duration)');
-      expect(result).not.toContain('filter(');
-      expect(result).not.toContain('duration >');
-      expect(result).not.toContain('response.status');
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+      });
+      expect(result).toBe(expected);
     });
 
-    it('applies different filters to different metrics', () => {
+    it('applies different filters to different metrics using filter()', () => {
       const state = createTestState({
         metricItems: [
-          {
+          createTestMetric({
             id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx' })],
-          },
-          {
+          }),
+          createTestMetric({
             id: 'metric-2',
-            field: 'duration',
             aggregationType: 'average',
             filters: [createTestFilter({ id: 'filter-2', field: 'duration', operator: '>', value: '1' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain("SELECT filter(count(duration), WHERE response.status LIKE '4%')");
-      expect(result).toContain('filter(average(duration), WHERE duration > 1)');
+      const expected = buildExpectedQuery({
+        select: "filter(count(duration), WHERE response.status LIKE '4%'), filter(average(duration), WHERE duration > 1)",
+        apps: ['global-tax-mapper-api'],
+      });
+      expect(result).toBe(expected);
     });
 
     it('lifts shared filters to global WHERE clause', () => {
       const state = createTestState({
         metricItems: [
-          {
+          createTestMetric({
             id: 'metric-1',
-            field: 'duration',
-            aggregationType: 'count',
             filters: [createTestFilter({ field: 'response.status', operator: '=', value: '200' })],
-          },
-          {
+          }),
+          createTestMetric({
             id: 'metric-2',
-            field: 'duration',
             aggregationType: 'average',
             filters: [createTestFilter({ id: 'filter-2', field: 'response.status', operator: '=', value: '200' })],
-          },
+          }),
         ],
       });
       const result = buildNrqlQuery(state);
-      expect(result).toContain('SELECT count(duration), average(duration)');
-      expect(result).toContain('response.status = 200');
-      expect(result).not.toContain('filter(');
+      const expected = buildExpectedQuery({
+        select: 'count(duration), average(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['response.status = 200'],
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('lifts multiple shared filters to global WHERE clause', () => {
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            id: 'metric-1',
+            filters: [
+              createTestFilter({ id: 'f1', field: 'response.status', operator: '=', value: '200' }),
+              createTestFilter({ id: 'f2', field: 'duration', operator: '>', value: '0.5' }),
+            ],
+          }),
+          createTestMetric({
+            id: 'metric-2',
+            aggregationType: 'average',
+            filters: [
+              createTestFilter({ id: 'f3', field: 'response.status', operator: '=', value: '200' }),
+              createTestFilter({ id: 'f4', field: 'duration', operator: '>', value: '0.5' }),
+            ],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      // Note: filters are sorted alphabetically when lifted to global WHERE
+      const expected = buildExpectedQuery({
+        select: 'count(duration), average(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['response.status = 200 AND duration > 0.5'],
+      });
+      expect(result).toBe(expected);
     });
   });
 
@@ -582,76 +800,86 @@ describe('buildNrqlQuery', () => {
       it('negates = operator to !=', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
-              field: 'duration',
-              aggregationType: 'count',
+            createTestMetric({
               filters: [createTestFilter({ field: 'duration', operator: '=', value: '0.5', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('duration != 0.5');
+        const expected = buildExpectedQuery({
+          select: 'count(duration)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['duration != 0.5'],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates > operator to <=', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
-              field: 'duration',
-              aggregationType: 'count',
+            createTestMetric({
               filters: [createTestFilter({ field: 'duration', operator: '>', value: '0.5', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('duration <= 0.5');
+        const expected = buildExpectedQuery({
+          select: 'count(duration)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['duration <= 0.5'],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates >= operator to <', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
-              field: 'duration',
-              aggregationType: 'count',
+            createTestMetric({
               filters: [createTestFilter({ field: 'duration', operator: '>=', value: '0.5', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('duration < 0.5');
+        const expected = buildExpectedQuery({
+          select: 'count(duration)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['duration < 0.5'],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates < operator to >=', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
-              field: 'duration',
-              aggregationType: 'count',
+            createTestMetric({
               filters: [createTestFilter({ field: 'duration', operator: '<', value: '0.5', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('duration >= 0.5');
+        const expected = buildExpectedQuery({
+          select: 'count(duration)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['duration >= 0.5'],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates <= operator to >', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
-              field: 'duration',
-              aggregationType: 'count',
+            createTestMetric({
               filters: [createTestFilter({ field: 'duration', operator: '<=', value: '0.5', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('duration > 0.5');
+        const expected = buildExpectedQuery({
+          select: 'count(duration)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['duration > 0.5'],
+        });
+        expect(result).toBe(expected);
       });
     });
 
@@ -659,31 +887,35 @@ describe('buildNrqlQuery', () => {
       it('negates = operator to != for string fields', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
-              field: 'duration',
-              aggregationType: 'count',
+            createTestMetric({
               filters: [createTestFilter({ field: 'request.uri', operator: '=', value: '/api/test', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain("request.uri != /api/test");
+        const expected = buildExpectedQuery({
+          select: 'count(duration)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['request.uri != /api/test'],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates IN operator to NOT IN for string fields', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
-              field: 'duration',
-              aggregationType: 'count',
+            createTestMetric({
               filters: [createTestFilter({ field: 'request.uri', operator: 'IN', value: '/api/test, /api/other', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('request.uri NOT IN (/api/test, /api/other)');
+        const expected = buildExpectedQuery({
+          select: 'count(duration)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['request.uri NOT IN (/api/test, /api/other)'],
+        });
+        expect(result).toBe(expected);
       });
     });
 
@@ -691,93 +923,109 @@ describe('buildNrqlQuery', () => {
       it('negates single exact status code = to !=', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
+            createTestMetric({
               field: 'response.status',
-              aggregationType: 'count',
               filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('response.status != 404');
+        const expected = buildExpectedQuery({
+          select: 'count(response.status)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['response.status != 404'],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates multiple exact status codes IN to NOT IN', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
+            createTestMetric({
               field: 'response.status',
-              aggregationType: 'count',
               filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 500', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain('response.status NOT IN (404, 503, 500)');
+        const expected = buildExpectedQuery({
+          select: 'count(response.status)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ['response.status NOT IN (404, 503, 500)'],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates single fuzzy status code LIKE to NOT LIKE', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
+            createTestMetric({
               field: 'response.status',
-              aggregationType: 'count',
               filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain("response.status NOT LIKE '4%'");
+        const expected = buildExpectedQuery({
+          select: 'count(response.status)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ["response.status NOT LIKE '4%'"],
+        });
+        expect(result).toBe(expected);
       });
 
-      it('negates multiple fuzzy status codes LIKE to NOT LIKE', () => {
+      it('negates multiple fuzzy status codes with OR grouping', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
+            createTestMetric({
               field: 'response.status',
-              aggregationType: 'count',
               filters: [createTestFilter({ field: 'response.status', operator: '=', value: '4xx, 5xx', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain("response.status NOT LIKE '4%'");
-        expect(result).toContain("response.status NOT LIKE '5%'");
-        expect(result).toContain(' OR ');
+        const expected = buildExpectedQuery({
+          select: 'count(response.status)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ["(response.status NOT LIKE '4%' OR response.status NOT LIKE '5%')"],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates mixed exact and fuzzy codes with OR grouping', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
+            createTestMetric({
               field: 'response.status',
-              aggregationType: 'count',
               filters: [createTestFilter({ field: 'response.status', operator: '=', value: '503, 4xx', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain("(response.status != 503 OR response.status NOT LIKE '4%')");
+        const expected = buildExpectedQuery({
+          select: 'count(response.status)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ["(response.status != 503 OR response.status NOT LIKE '4%')"],
+        });
+        expect(result).toBe(expected);
       });
 
       it('negates multiple exact and fuzzy codes with OR grouping', () => {
         const state = createTestState({
           metricItems: [
-            {
-              id: 'metric-1',
+            createTestMetric({
               field: 'response.status',
-              aggregationType: 'count',
               filters: [createTestFilter({ field: 'response.status', operator: '=', value: '404, 503, 4xx, 5xx', negated: true })],
-            },
+            }),
           ],
         });
         const result = buildNrqlQuery(state);
-        expect(result).toContain("(response.status NOT IN (404, 503) OR response.status NOT LIKE '4%' OR response.status NOT LIKE '5%')");
+        const expected = buildExpectedQuery({
+          select: 'count(response.status)',
+          apps: ['global-tax-mapper-api'],
+          additionalWhereConditions: ["(response.status NOT IN (404, 503) OR response.status NOT LIKE '4%' OR response.status NOT LIKE '5%')"],
+        });
+        expect(result).toBe(expected);
       });
     });
   });

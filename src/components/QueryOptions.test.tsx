@@ -2,169 +2,139 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider, createStore } from 'jotai';
 import { QueryOptions } from './QueryOptions';
-import { excludeHealthChecksAtom, useTimeseriesAtom } from '../atoms';
+import {
+  excludeBulkEndpointAtom,
+  excludeHealthChecksAtom,
+  useTimeseriesAtom,
+} from '../atoms';
+
+const renderWithStore = (store: ReturnType<typeof createStore>) =>
+  render(
+    <Provider store={store}>
+      <QueryOptions />
+    </Provider>
+  );
 
 describe('QueryOptions', () => {
-  it('renders the exclude health checks checkbox', () => {
-    const store = createStore();
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
-
-    expect(screen.getByLabelText('Exclude health checks')).toBeInTheDocument();
-  });
-
-  it('shows checkbox as checked when isExcluded is true', () => {
-    const store = createStore();
-    store.set(excludeHealthChecksAtom, true);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
-
-    expect(screen.getByLabelText('Exclude health checks')).toBeChecked();
-  });
-
-  it('shows checkbox as unchecked when isExcluded is false', () => {
-    const store = createStore();
-    store.set(excludeHealthChecksAtom, false);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
-
-    expect(screen.getByLabelText('Exclude health checks')).not.toBeChecked();
-  });
-
-  it('updates atom when checked box is clicked', async () => {
-    const user = userEvent.setup();
-    const store = createStore();
-    store.set(excludeHealthChecksAtom, true);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
-
-    await user.click(screen.getByLabelText('Exclude health checks'));
-    expect(store.get(excludeHealthChecksAtom)).toBe(false);
-  });
-
-  it('updates atom when unchecked box is clicked', async () => {
-    const user = userEvent.setup();
-    const store = createStore();
-    store.set(excludeHealthChecksAtom, false);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
-
-    await user.click(screen.getByLabelText('Exclude health checks'));
-    expect(store.get(excludeHealthChecksAtom)).toBe(true);
-  });
-
-  it('displays excluded paths hint when isExcluded is true', () => {
-    const store = createStore();
-    store.set(excludeHealthChecksAtom, true);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
-
-    // Component renders the checkbox but no hint text
-    expect(screen.getByLabelText('Exclude health checks')).toBeInTheDocument();
-  });
-
-  it('does not display excluded paths hint when isExcluded is false', () => {
-    const store = createStore();
-    store.set(excludeHealthChecksAtom, false);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
-
-    expect(screen.queryByText(/Excludes:/)).not.toBeInTheDocument();
-  });
-
   it('renders the Options legend', () => {
     const store = createStore();
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
+    renderWithStore(store);
 
     expect(screen.getByText('Options')).toBeInTheDocument();
   });
 
-  it('renders the use timeseries checkbox', () => {
-    const store = createStore();
-    store.set(useTimeseriesAtom, true);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
+  describe('health checks toggle', () => {
+    it('renders the exclude health checks checkbox', () => {
+      const store = createStore();
+      renderWithStore(store);
 
-    expect(screen.getByLabelText('As Timeseries')).toBeInTheDocument();
+      expect(screen.getByLabelText('Exclude health checks')).toBeInTheDocument();
+    });
+
+    it('shows health checkbox as checked when enabled', () => {
+      const store = createStore();
+      store.set(excludeHealthChecksAtom, true);
+      renderWithStore(store);
+
+      expect(screen.getByLabelText('Exclude health checks')).toBeChecked();
+    });
+
+    it('shows health checkbox as unchecked when disabled', () => {
+      const store = createStore();
+      store.set(excludeHealthChecksAtom, false);
+      renderWithStore(store);
+
+      expect(screen.getByLabelText('Exclude health checks')).not.toBeChecked();
+    });
+
+    it('toggles the health checkbox when clicked', async () => {
+      const user = userEvent.setup();
+      const store = createStore();
+      store.set(excludeHealthChecksAtom, true);
+      renderWithStore(store);
+
+      await user.click(screen.getByLabelText('Exclude health checks'));
+      expect(store.get(excludeHealthChecksAtom)).toBe(false);
+
+      await user.click(screen.getByLabelText('Exclude health checks'));
+      expect(store.get(excludeHealthChecksAtom)).toBe(true);
+    });
   });
 
-  it('shows timeseries checkbox as checked when useTimeseries is true', () => {
-    const store = createStore();
-    store.set(useTimeseriesAtom, true);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
+  describe('bulk endpoint toggle', () => {
+    it('renders the bulk endpoint checkbox', () => {
+      const store = createStore();
+      renderWithStore(store);
 
-    expect(screen.getByLabelText('As Timeseries')).toBeChecked();
+      expect(screen.getByLabelText('Exclude bulk endpoint')).toBeInTheDocument();
+    });
+
+    it('shows bulk checkbox as checked when enabled', () => {
+      const store = createStore();
+      store.set(excludeBulkEndpointAtom, true);
+      renderWithStore(store);
+
+      expect(screen.getByLabelText('Exclude bulk endpoint')).toBeChecked();
+    });
+
+    it('shows bulk checkbox as unchecked when disabled', () => {
+      const store = createStore();
+      store.set(excludeBulkEndpointAtom, false);
+      renderWithStore(store);
+
+      expect(screen.getByLabelText('Exclude bulk endpoint')).not.toBeChecked();
+    });
+
+    it('toggles the bulk checkbox when clicked', async () => {
+      const user = userEvent.setup();
+      const store = createStore();
+      store.set(excludeBulkEndpointAtom, true);
+      renderWithStore(store);
+
+      await user.click(screen.getByLabelText('Exclude bulk endpoint'));
+      expect(store.get(excludeBulkEndpointAtom)).toBe(false);
+
+      await user.click(screen.getByLabelText('Exclude bulk endpoint'));
+      expect(store.get(excludeBulkEndpointAtom)).toBe(true);
+    });
   });
 
-  it('shows timeseries checkbox as unchecked when useTimeseries is false', () => {
-    const store = createStore();
-    store.set(useTimeseriesAtom, false);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
+  describe('timeseries toggle', () => {
+    it('renders the use timeseries checkbox', () => {
+      const store = createStore();
+      store.set(useTimeseriesAtom, true);
+      renderWithStore(store);
 
-    expect(screen.getByLabelText('As Timeseries')).not.toBeChecked();
-  });
+      expect(screen.getByLabelText('As Timeseries')).toBeInTheDocument();
+    });
 
-  it('updates atom when checked timeseries box is clicked', async () => {
-    const user = userEvent.setup();
-    const store = createStore();
-    store.set(useTimeseriesAtom, true);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
+    it('shows timeseries checkbox as checked when useTimeseries is true', () => {
+      const store = createStore();
+      store.set(useTimeseriesAtom, true);
+      renderWithStore(store);
 
-    await user.click(screen.getByLabelText('As Timeseries'));
-    expect(store.get(useTimeseriesAtom)).toBe(false);
-  });
+      expect(screen.getByLabelText('As Timeseries')).toBeChecked();
+    });
 
-  it('updates atom when unchecked timeseries box is clicked', async () => {
-    const user = userEvent.setup();
-    const store = createStore();
-    store.set(useTimeseriesAtom, false);
-    render(
-      <Provider store={store}>
-        <QueryOptions />
-      </Provider>
-    );
+    it('shows timeseries checkbox as unchecked when useTimeseries is false', () => {
+      const store = createStore();
+      store.set(useTimeseriesAtom, false);
+      renderWithStore(store);
 
-    await user.click(screen.getByLabelText('As Timeseries'));
-    expect(store.get(useTimeseriesAtom)).toBe(true);
+      expect(screen.getByLabelText('As Timeseries')).not.toBeChecked();
+    });
+
+    it('toggles the timeseries checkbox when clicked', async () => {
+      const user = userEvent.setup();
+      const store = createStore();
+      store.set(useTimeseriesAtom, true);
+      renderWithStore(store);
+
+      await user.click(screen.getByLabelText('As Timeseries'));
+      expect(store.get(useTimeseriesAtom)).toBe(false);
+
+      await user.click(screen.getByLabelText('As Timeseries'));
+      expect(store.get(useTimeseriesAtom)).toBe(true);
+    });
   });
 });

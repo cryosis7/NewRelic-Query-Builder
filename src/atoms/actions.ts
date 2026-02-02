@@ -6,6 +6,7 @@ import {
   environmentAtom,
   timePeriodAtom,
   excludeHealthChecksAtom,
+  excludeBulkEndpointAtom,
   useTimeseriesAtom,
   facetAtom,
 } from './primitives';
@@ -19,6 +20,7 @@ export const applyPresetAtom = atom(
     if (preset.metricItems !== undefined) set(metricItemsAtom, preset.metricItems);
     if (preset.timePeriod !== undefined) set(timePeriodAtom, preset.timePeriod);
     if (preset.excludeHealthChecks !== undefined) set(excludeHealthChecksAtom, preset.excludeHealthChecks);
+    if (preset.excludeBulkEndpoint !== undefined) set(excludeBulkEndpointAtom, preset.excludeBulkEndpoint);
     if (preset.useTimeseries !== undefined) set(useTimeseriesAtom, preset.useTimeseries);
     if (preset.facet !== undefined) set(facetAtom, preset.facet);
   }
@@ -33,6 +35,7 @@ export const resetAtom = atom(
     set(metricItemsAtom, initial.metricItems);
     set(timePeriodAtom, initial.timePeriod);
     set(excludeHealthChecksAtom, initial.excludeHealthChecks);
+    set(excludeBulkEndpointAtom, initial.excludeBulkEndpoint);
     set(useTimeseriesAtom, initial.useTimeseries);
     set(facetAtom, initial.facet);
   }

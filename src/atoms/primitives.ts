@@ -9,6 +9,7 @@ export const environmentAtom = atom<Environment>('prod');
 export const timePeriodAtom = atom<TimePeriod>(getDefaultTimePeriod());
 
 export const excludeHealthChecksAtom = atom<boolean>(true);
+export const excludeBulkEndpointAtom = atom<boolean>(true);
 
 export const useTimeseriesAtom = atom<boolean>(true);
 

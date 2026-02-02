@@ -1,18 +1,25 @@
 import { useAtom } from 'jotai';
 import XUICheckbox, {XUICheckboxGroup} from '@xero/xui/react/checkbox';
-import { excludeHealthChecksAtom, useTimeseriesAtom } from '../atoms';
+import { excludeBulkEndpointAtom, excludeHealthChecksAtom, useTimeseriesAtom } from '../atoms';
 
 export function QueryOptions() {
-  const [isExcluded, setIsExcluded] = useAtom(excludeHealthChecksAtom);
+  const [excludeHealthChecks, setExcludeHealthChecks] = useAtom(excludeHealthChecksAtom);
+  const [excludeBulkEndpoint, setExcludeBulkEndpoint] = useAtom(excludeBulkEndpointAtom);
   const [useTimeseries, setUseTimeseries] = useAtom(useTimeseriesAtom);
 
   return (
     <XUICheckboxGroup label="Options">
       <XUICheckbox
-        isChecked={isExcluded}
-        onChange={(e) => setIsExcluded(e.target.checked)}
+        isChecked={excludeHealthChecks}
+        onChange={(e) => setExcludeHealthChecks(e.target.checked)}
       >
         Exclude health checks
+      </XUICheckbox>
+      <XUICheckbox
+        isChecked={excludeBulkEndpoint}
+        onChange={(e) => setExcludeBulkEndpoint(e.target.checked)}
+      >
+        Exclude bulk endpoint
       </XUICheckbox>
       <XUICheckbox
         isChecked={useTimeseries}

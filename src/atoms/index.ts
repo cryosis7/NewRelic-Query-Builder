@@ -4,6 +4,7 @@ export {
   environmentAtom,
   timePeriodAtom,
   excludeHealthChecksAtom,
+  excludeBulkEndpointAtom,
   useTimeseriesAtom,
   facetAtom,
 } from './primitives';

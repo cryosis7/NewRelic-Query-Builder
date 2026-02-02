@@ -5,7 +5,7 @@ import type {
   QueryState,
   TimePeriod,
 } from '../types/query';
-import {HEALTH_CHECK_PATHS, getFieldByName} from '../types/query';
+import {BULK_ENDPOINT_PATHS, HEALTH_CHECK_PATHS, getFieldByName} from '../types/query';
 
 export function getDefaultTimePeriod(): TimePeriod {
   return {
@@ -21,6 +21,7 @@ export function getInitialState(): QueryState {
     metricItems: [createMetricItem('duration', 'count')],
     timePeriod: getDefaultTimePeriod(),
     excludeHealthChecks: true,
+    excludeBulkEndpoint: true,
     useTimeseries: true,
     facet: 'request.uri',
   };
@@ -257,8 +258,14 @@ export function buildNrqlQuery(state: QueryState): string {
   // Build WHERE clause
   const whereConditions: string[] = [`appName IN (${appNames})`];
 
-  if (state.excludeHealthChecks) {
+  if (state.excludeHealthChecks && state.excludeBulkEndpoint) {
+    const paths = [...HEALTH_CHECK_PATHS, ...BULK_ENDPOINT_PATHS].map(p => `'${p}'`).join(', ');
+    whereConditions.push(`request.uri NOT IN (${paths})`);
+  } else if (state.excludeHealthChecks) {
     const paths = HEALTH_CHECK_PATHS.map(p => `'${p}'`).join(', ');
+    whereConditions.push(`request.uri NOT IN (${paths})`);
+  } else if (state.excludeBulkEndpoint) {
+    const paths = BULK_ENDPOINT_PATHS.map(p => `'${p}'`).join(', ');
     whereConditions.push(`request.uri NOT IN (${paths})`);
   }
 

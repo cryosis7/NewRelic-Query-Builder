@@ -5,6 +5,7 @@ import {
   environmentAtom,
   timePeriodAtom,
   excludeHealthChecksAtom,
+  excludeBulkEndpointAtom,
   useTimeseriesAtom,
   facetAtom,
 } from './primitives';
@@ -23,6 +24,7 @@ export const nrqlQueryAtom = atom((get) => {
     metricItems: get(metricItemsAtom),
     timePeriod: get(timePeriodAtom),
     excludeHealthChecks: get(excludeHealthChecksAtom),
+    excludeBulkEndpoint: get(excludeBulkEndpointAtom),
     useTimeseries: get(useTimeseriesAtom),
     facet: get(facetAtom),
   };
