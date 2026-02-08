@@ -22,7 +22,10 @@ function App() {
 
     const header = (
         <XUIPanelHeader>
-            <XUIPanelHeading headingLevel={1}>New Relic Query Builder</XUIPanelHeading>
+            <Flex align="center" gap="1rem">
+                <img src="/nr-builder-logo.svg" alt="NR Query Builder Logo" style={{ height: '48px', width: '48px' }} />
+                <XUIPanelHeading headingLevel={1}>New Relic Query Builder</XUIPanelHeading>
+            </Flex>
         </XUIPanelHeader>
     )
 
