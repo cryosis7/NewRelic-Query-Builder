@@ -82,15 +82,15 @@ export const QUERY_PRESETS: QueryPreset[] = [
         },
     },
     {
-        id: 'gtm-latency-3h',
-        name: 'GTM Latency - Last 3 Hours',
+        id: 'api-latency-3h',
+        name: 'API Latency - Last 3 Hours',
         description: 'Average duration for all applications over the last 3 hours',
         state: {
-            applications: ['global-tax-mapper-api', 'global-tax-mapper-bff', 'global-tax-mapper-integrator-api'],
+            applications: ['global-tax-mapper-api'],
             environment: 'prod',
             metricItems: [
                 {
-                    id: 'preset-gtm-latency-3h',
+                    id: 'preset-api-latency-3h',
                     field: 'duration',
                     aggregationType: 'average',
                     filters: [],
@@ -100,7 +100,7 @@ export const QUERY_PRESETS: QueryPreset[] = [
             excludeHealthChecks: true,
             excludeBulkEndpoint: true,
             useTimeseries: true,
-            facet: 'appName',
+            facet: 'none',
         },
     },
     {

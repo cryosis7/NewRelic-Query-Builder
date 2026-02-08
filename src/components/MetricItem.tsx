@@ -53,8 +53,8 @@ export function MetricItem({
         : AGGREGATION_TYPES;
 
     return (
-        <Flex justify="start" align="center">
-            <FlexItem className="xui-padding-horizontal">
+        <Flex justify="start" align="center" gap={12}>
+            <FlexItem>
                 <XUISingleSelect
                     key={`${item.id}-field-${item.field}`}
                     defaultSelectedOptionId={item.field}
@@ -73,7 +73,7 @@ export function MetricItem({
                     </XUISingleSelectOptions>
                 </XUISingleSelect>
             </FlexItem>
-            <FlexItem className="xui-padding-horizontal">
+            <FlexItem>
                 <XUISingleSelect
                     key={`${item.id}-aggregation-${item.aggregationType}`}
                     defaultSelectedOptionId={item.aggregationType}
@@ -93,7 +93,7 @@ export function MetricItem({
                 </XUISingleSelect>
             </FlexItem>
 
-            <FlexItem>
+            <FlexItem shrink={false}>
                 <XUIButton
                     variant="borderless-main"
                     style={{top: "12px"}}
