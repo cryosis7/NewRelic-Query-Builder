@@ -57,7 +57,7 @@ test.describe('Query Preview', () => {
       
       // Should have proper structure
       expect(queryText).toContain('FROM Transaction');
-      expect(queryText).toContain('count(*)');
+      expect(queryText).toContain('average(duration)');
       expect(queryText).toContain("appName in ('global-tax-mapper-api-prod')");
       expect(queryText).toContain('TIMESERIES AUTO');
       expect(queryText).toContain('FACET request.uri');

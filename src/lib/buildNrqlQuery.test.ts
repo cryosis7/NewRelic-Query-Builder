@@ -1,6 +1,6 @@
 import {buildNrqlQuery} from './buildNrqlQuery';
 import type {MetricFilter, MetricQueryItem, QueryState} from '../types/query';
-import {BULK_ENDPOINT_PATHS, HEALTH_CHECK_PATHS} from '../types/query';
+import {AGGREGATION_TYPES, BULK_ENDPOINT_PATHS, getAggregationConfig, HEALTH_CHECK_PATHS} from '../types/query';
 
 function createTestFilter(overrides: Partial<MetricFilter> = {}): MetricFilter {
   return {
@@ -1027,6 +1027,144 @@ describe('buildNrqlQuery', () => {
         });
         expect(result).toBe(expected);
       });
+    });
+  });
+
+  describe('config-driven aggregation types', () => {
+    describe('AGGREGATION_TYPES configuration', () => {
+      it.each(
+        AGGREGATION_TYPES.map(config => [config.value, config.label, config.nrqlTemplate])
+      )('supports %s aggregation type (%s) with template %s', (value, _label, nrqlTemplate) => {
+        const expectedSelect = nrqlTemplate.replace('{field}', 'duration');
+        const state = createTestState({
+          metricItems: [createTestMetric({ field: 'duration', aggregationType: value })],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain(`SELECT ${expectedSelect}`);
+      });
+
+      it('generates correct NRQL for all aggregation types from config', () => {
+        // Test that every aggregation type in AGGREGATION_TYPES produces valid NRQL
+        for (const config of AGGREGATION_TYPES) {
+          const state = createTestState({
+            metricItems: [createTestMetric({ field: 'duration', aggregationType: config.value })],
+          });
+          const result = buildNrqlQuery(state);
+          const expectedSelect = config.nrqlTemplate.replace('{field}', 'duration');
+          expect(result).toContain(expectedSelect);
+        }
+      });
+    });
+
+    describe('nrqlTemplate interpolation', () => {
+      it.each([
+        ['count', 'count(duration)', 'duration'],
+        ['average', 'average(duration)', 'duration'],
+        ['p95', 'percentile(duration, 95)', 'duration'],
+        ['uniques', 'uniques(response.status)', 'response.status'],
+        ['median', 'median(duration)', 'duration'],
+      ] as const)('interpolates %s template to %s for field %s', (aggregationType, expectedNrql, field) => {
+        const state = createTestState({
+          metricItems: [createTestMetric({ field, aggregationType })],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain(`SELECT ${expectedNrql}`);
+      });
+
+      it('correctly replaces {field} placeholder with any field name', () => {
+        const fields = ['duration', 'response.status', 'request.uri', 'http.method', 'name'];
+        
+        for (const field of fields) {
+          const state = createTestState({
+            metricItems: [createTestMetric({ field, aggregationType: 'count' })],
+          });
+          const result = buildNrqlQuery(state);
+          expect(result).toContain(`count(${field})`);
+        }
+      });
+    });
+
+    describe('aggregation type and field combinations', () => {
+      it.each(
+        AGGREGATION_TYPES.map(config => [config.value, config.nrqlTemplate])
+      )('generates correct SELECT for %s aggregation on response.status field', (aggregationType, nrqlTemplate) => {
+        const expectedSelect = nrqlTemplate.replace('{field}', 'response.status');
+        const state = createTestState({
+          metricItems: [createTestMetric({ field: 'response.status', aggregationType })],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain(`SELECT ${expectedSelect}`);
+      });
+
+      it('supports multiple metrics with different aggregation types', () => {
+        const state = createTestState({
+          metricItems: [
+            createTestMetric({ id: 'metric-1', field: 'duration', aggregationType: 'count' }),
+            createTestMetric({ id: 'metric-2', field: 'duration', aggregationType: 'average' }),
+            createTestMetric({ id: 'metric-3', field: 'duration', aggregationType: 'p95' }),
+            createTestMetric({ id: 'metric-4', field: 'duration', aggregationType: 'median' }),
+          ],
+        });
+        const result = buildNrqlQuery(state);
+        expect(result).toContain('count(duration)');
+        expect(result).toContain('average(duration)');
+        expect(result).toContain('percentile(duration, 95)');
+        expect(result).toContain('median(duration)');
+      });
+    });
+  });
+
+  describe('getAggregationConfig helper', () => {
+    it.each(
+      AGGREGATION_TYPES.map(config => [config.value, config])
+    )('returns correct config for %s aggregation type', (type, expectedConfig) => {
+      const result = getAggregationConfig(type);
+      expect(result).toEqual(expectedConfig);
+    });
+
+    it('returns undefined for invalid aggregation type', () => {
+      // @ts-expect-error - testing invalid type
+      const result = getAggregationConfig('invalid-type');
+      expect(result).toBeUndefined();
+    });
+
+    it('returns config with all required properties for each aggregation type', () => {
+      for (const config of AGGREGATION_TYPES) {
+        const result = getAggregationConfig(config.value);
+        expect(result).toBeDefined();
+        expect(result).toHaveProperty('value');
+        expect(result).toHaveProperty('label');
+        expect(result).toHaveProperty('nrqlTemplate');
+        expect(typeof result!.value).toBe('string');
+        expect(typeof result!.label).toBe('string');
+        expect(typeof result!.nrqlTemplate).toBe('string');
+        expect(result!.nrqlTemplate).toContain('{field}');
+      }
+    });
+
+    it('identifies numerical aggregators correctly', () => {
+      const numericalAggregators = AGGREGATION_TYPES.filter(config => config.isNumericalAggregator);
+      const nonNumericalAggregators = AGGREGATION_TYPES.filter(config => !config.isNumericalAggregator);
+
+      // Verify numerical aggregators
+      for (const config of numericalAggregators) {
+        const result = getAggregationConfig(config.value);
+        expect(result?.isNumericalAggregator).toBe(true);
+      }
+
+      // Verify non-numerical aggregators
+      for (const config of nonNumericalAggregators) {
+        const result = getAggregationConfig(config.value);
+        expect(result?.isNumericalAggregator).toBeFalsy();
+      }
+    });
+
+    it('returns consistent results when called multiple times', () => {
+      for (const config of AGGREGATION_TYPES) {
+        const result1 = getAggregationConfig(config.value);
+        const result2 = getAggregationConfig(config.value);
+        expect(result1).toEqual(result2);
+      }
     });
   });
 });

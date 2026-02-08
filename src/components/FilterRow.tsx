@@ -70,9 +70,9 @@ export function FilterRow({filter, metricItemId, onUpdate, onRemove}: FilterRowP
 
             <FlexItem alignSelf="stretch" alignContent="center">
                 <XUIIconButton
-                    style={{width: '38px', height: '38px', top: "12px"}}
+                    style={{width: '38px', height: '38px', top: "12px", border: `${filter.negated ? '1px solid orange' : ''}`}}
                     ariaLabel="Toggle NOT"
-                    iconSize="small"
+                    iconSize={filter.negated ? 'large' : 'small'}
                     iconColor={filter.negated ? "orange" : undefined}
                     icon={exclamation}
                     onClick={() => onUpdate(metricItemId, filter.id, {negated: !filter.negated})}

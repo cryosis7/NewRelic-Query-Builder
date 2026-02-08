@@ -9,7 +9,7 @@ import { createMetricItem } from '../lib/buildNrqlQuery';
 function createItem(overrides: Partial<MetricQueryItem> = {}): MetricQueryItem {
   return {
     id: 'metric-1',
-    metricType: 'transaction-count',
+    field: 'duration',
     aggregationType: 'count',
     filters: [],
     ...overrides,

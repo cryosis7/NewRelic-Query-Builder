@@ -83,7 +83,7 @@ export const untilDateAtom = atom(
     const newDateStr = formatDateToString(newDate);
     set(timePeriodAtom, {
       ...current,
-      until: formatDateTime(newDateStr, time || '00:00'),
+      until: formatDateTime(newDateStr, time || '23:59'),
     });
   }
 );
@@ -98,8 +98,8 @@ export const untilTimeAtom = atom(
   (get, set, newTime: string) => {
     const current = get(timePeriodAtom);
     const { date } = parseDateTime(current.until ?? '');
-    // Validate time format, default to 00:00 if invalid
-    const validTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(newTime) ? newTime : '00:00';
+    // Validate time format, default to 23:59 if invalid
+    const validTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(newTime) ? newTime : '23:59';
     set(timePeriodAtom, {
       ...current,
       until: formatDateTime(date, validTime),
@@ -110,15 +110,18 @@ export const untilTimeAtom = atom(
 /** Initialize since/until with default values if undefined */
 export const initializeTimePeriodAtom = atom(null, (get, set) => {
   const current = get(timePeriodAtom);
-  const ONE_HOUR_MS = 60 * 60 * 1000;
   const updates: Partial<typeof current> = {};
 
-  if (current.since === undefined) {
-    const oneHourAgo = new Date(Date.now() - ONE_HOUR_MS);
-    updates.since = oneHourAgo.toISOString().slice(0, 16);
-  }
-  if (current.until === undefined) {
-    updates.until = new Date().toISOString().slice(0, 16);
+  if (current.since === undefined || current.until === undefined) {
+    const today = new Date();
+    const dateStr = formatDateToString(today);
+    
+    if (current.since === undefined) {
+      updates.since = formatDateTime(dateStr, '00:00');
+    }
+    if (current.until === undefined) {
+      updates.until = formatDateTime(dateStr, '23:59');
+    }
   }
 
   if (Object.keys(updates).length > 0) {

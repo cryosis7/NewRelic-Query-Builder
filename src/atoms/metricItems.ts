@@ -1,17 +1,11 @@
-import { atom } from 'jotai';
-import type { MetricQueryItem, MetricFilter, AggregationType } from '../types/query';
-import { createMetricItem, createMetricFilter } from '../lib/buildNrqlQuery';
-import { getFieldByName } from '../types/query';
-
-// Helper function to normalize aggregation based on field type
-function normalizeAggregationForMetric(field: string, aggregationType: AggregationType): AggregationType {
-  const fieldDef = getFieldByName(field);
-  return fieldDef?.canAggregate ? aggregationType : 'count';
-}
+import {atom} from 'jotai';
+import type {MetricFilter, MetricQueryItem} from '../types/query';
+import {getFieldByName} from '../types/query';
+import {createMetricFilter, createMetricItem} from '../lib/buildNrqlQuery';
 
 // Base atom for metric items
 export const metricItemsAtom = atom<MetricQueryItem[]>([
-  createMetricItem('duration', 'count'),
+  createMetricItem('duration', 'average'),
 ]);
 
 // Write-only action atom to add a new metric item
@@ -19,7 +13,7 @@ export const addMetricItemAtom = atom(
   null,
   (get, set) => {
     const current = get(metricItemsAtom);
-    set(metricItemsAtom, [...current, createMetricItem('duration', 'count')]);
+    set(metricItemsAtom, [...current, createMetricItem('duration', 'average')]);
   }
 );
 
@@ -35,17 +29,9 @@ export const updateMetricItemAtom = atom(
           return item;
         }
 
-        const updatedField = updates.field ?? item.field;
-        const updatedAggregationType = normalizeAggregationForMetric(
-          updatedField,
-          updates.aggregationType ?? item.aggregationType
-        );
-
         return {
           ...item,
-          ...updates,
-          field: updatedField,
-          aggregationType: updatedAggregationType,
+          ...updates
         };
       })
     );

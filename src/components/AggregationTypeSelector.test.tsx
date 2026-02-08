@@ -9,7 +9,7 @@ describe('AggregationTypeSelector', () => {
     mockOnChange.mockClear();
   });
 
-  it('renders all aggregation options', async () => {
+  it('renders all aggregation options for numeric metrics', async () => {
     const user = userEvent.setup();
     render(
       <AggregationTypeSelector
@@ -27,10 +27,10 @@ describe('AggregationTypeSelector', () => {
     expect(screen.getByRole('option', { name: '95th Percentile' })).toBeInTheDocument();
   });
 
-  it('shows only Count for non-duration metrics', () => {
+  it('shows only non-numeric metrics for string-based metrics', () => {
     render(
       <AggregationTypeSelector
-        metricType="transaction-count"
+        metricType="response.status"
         selectedAggregationType="count"
         onChange={mockOnChange}
       />

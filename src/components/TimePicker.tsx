@@ -11,7 +11,11 @@ export function TimePicker({value, onChange}: TimePickerProps) {
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = event.target.value;
-        onChange(/^([01]\d|2[0-3]):[0-5]\d$/.test(newValue) ? newValue : '00:00');
+        // Only pass through valid complete time values (HH:mm format)
+        // HTML time inputs provide values in HH:mm format when user completes selection
+        if (/^([01]\d|2[0-3]):[0-5]\d$/.test(newValue)) {
+            onChange(newValue);
+        }
     };
 
     return (

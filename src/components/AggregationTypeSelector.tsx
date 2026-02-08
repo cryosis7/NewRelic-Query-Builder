@@ -19,10 +19,17 @@ export function AggregationTypeSelector({
   onChange,
 }: AggregationTypeSelectorProps) {
   const fieldDef = getFieldByName(metricType);
-  const allowsDurationAggregations = fieldDef?.canAggregate ?? false;
-  const availableAggregations = allowsDurationAggregations
-    ? AGGREGATION_TYPES
-    : AGGREGATION_TYPES.filter(({ value }) => value === 'count');
+  if (!fieldDef) {
+    throw new Error('Unknown metricType: ' + metricType);
+  }
+
+  console.dir(AGGREGATION_TYPES)
+  console.dir(fieldDef);
+
+  const availableAggregations = fieldDef.dataType === 'string'
+    ? AGGREGATION_TYPES.filter((aggregator => aggregator.isNumericalAggregator !== true))
+    : AGGREGATION_TYPES;
+
   const defaultAggregation = availableAggregations.some(({ value }) => value === selectedAggregationType)
     ? selectedAggregationType
     : availableAggregations[0].value;

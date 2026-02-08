@@ -44,7 +44,7 @@ describe('CommonQueriesPanel', () => {
     });
   });
 
-  it('updates atoms when API Prod button is clicked', async () => {
+  it('updates atoms when API Throughput button is clicked', async () => {
     const user = userEvent.setup();
     const store = createStore();
     render(
@@ -53,15 +53,15 @@ describe('CommonQueriesPanel', () => {
       </Provider>
     );
     
-    await user.click(screen.getByRole('button', { name: 'API Prod - Last Hour' }));
+    await user.click(screen.getByRole('button', { name: 'API Throughput - Last 3 Hours' }));
     
     expect(store.get(applicationsAtom)).toEqual(['global-tax-mapper-api']);
     expect(store.get(environmentAtom)).toBe('prod');
     expect(store.get(excludeHealthChecksAtom)).toBe(true);
-    expect(store.get(metricItemsAtom)?.[0]?.field).toBe('duration');
+    expect(store.get(metricItemsAtom)?.[0]?.field).toBe('response.status');
   });
 
-  it('updates atoms with all apps when All Apps button is clicked', async () => {
+  it('updates atoms with all apps when GTM Latency button is clicked', async () => {
     const user = userEvent.setup();
     const store = createStore();
     render(
@@ -70,7 +70,7 @@ describe('CommonQueriesPanel', () => {
       </Provider>
     );
     
-    await user.click(screen.getByRole('button', { name: 'All Apps Prod - Last Hour' }));
+    await user.click(screen.getByRole('button', { name: 'GTM Latency - Last 3 Hours' }));
     
     expect(store.get(applicationsAtom)).toEqual([
       'global-tax-mapper-api',
@@ -79,7 +79,7 @@ describe('CommonQueriesPanel', () => {
     ]);
   });
 
-  it('updates atoms with UAT environment when UAT button is clicked', async () => {
+  it('updates metricItems atom when API Error Count button is clicked', async () => {
     const user = userEvent.setup();
     const store = createStore();
     render(
@@ -88,9 +88,11 @@ describe('CommonQueriesPanel', () => {
       </Provider>
     );
     
-    await user.click(screen.getByRole('button', { name: 'API UAT - Last Hour' }));
+    await user.click(screen.getByRole('button', { name: 'API Error Count' }));
     
-    expect(store.get(environmentAtom)).toBe('uat');
+    expect(store.get(applicationsAtom)).toEqual(['global-tax-mapper-api']);
+    // Should have two metric items for 4xx and 5xx errors
+    expect(store.get(metricItemsAtom)?.length).toBe(2);
   });
 
   it('updates timePeriod atom when preset is clicked', async () => {
@@ -102,16 +104,15 @@ describe('CommonQueriesPanel', () => {
       </Provider>
     );
     
-    await user.click(screen.getByRole('button', { name: 'API Prod - Last Hour' }));
+    await user.click(screen.getByRole('button', { name: 'API Throughput - Last 3 Hours' }));
     
     const timePeriod = store.get(timePeriodAtom);
     expect(timePeriod).toBeDefined();
-    expect(timePeriod.mode).toBeDefined();
-    expect(timePeriod.relative).toBeDefined();
-    // since/until are now optional and not required for relative mode
+    expect(timePeriod.mode).toBe('relative');
+    expect(timePeriod.relative).toBe('3h ago');
   });
 
-  it('renders exactly 8 preset buttons (7 presets + 1 reset)', () => {
+  it('renders exactly 4 buttons (3 presets + 1 reset)', () => {
     const store = createStore();
     render(
       <Provider store={store}>
@@ -120,6 +121,6 @@ describe('CommonQueriesPanel', () => {
     );
     
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(8);
+    expect(buttons).toHaveLength(4);
   });
 });

@@ -220,7 +220,7 @@ describe('Time Period Derived Atoms', () => {
       expect(store.get(timePeriodAtom).until).toBe('2026-01-28T18:00');
     });
 
-    it('validates and defaults invalid time to 00:00', () => {
+    it('validates and defaults invalid time to 23:59', () => {
       const store = createStore();
       store.set(timePeriodAtom, {
         mode: 'absolute',
@@ -231,7 +231,7 @@ describe('Time Period Derived Atoms', () => {
 
       store.set(untilTimeAtom, '25:00'); // Invalid hour
 
-      expect(store.get(timePeriodAtom).until).toBe('2026-01-28T00:00');
+      expect(store.get(timePeriodAtom).until).toBe('2026-01-28T23:59');
     });
   });
 
@@ -281,6 +281,35 @@ describe('Time Period Derived Atoms', () => {
 
       expect(store.get(timePeriodAtom).since).toBe('2026-01-28T14:30');
       expect(store.get(timePeriodAtom).until).toBe('2026-01-28T15:30');
+    });
+
+    it('initializes both since and until to the same date when both are undefined', () => {
+      const store = createStore();
+      store.set(timePeriodAtom, {
+        mode: 'relative',
+        since: undefined,
+        until: undefined,
+        relative: '3h ago',
+      });
+
+      store.set(initializeTimePeriodAtom);
+
+      const since = store.get(timePeriodAtom).since;
+      const until = store.get(timePeriodAtom).until;
+      
+      expect(since).toBeDefined();
+      expect(until).toBeDefined();
+      
+      // Extract dates from the datetime strings
+      const sinceDate = since?.split('T')[0];
+      const untilDate = until?.split('T')[0];
+      
+      // Both should have the same date
+      expect(sinceDate).toBe(untilDate);
+      
+      // Verify default times
+      expect(since).toMatch(/T00:00$/);
+      expect(until).toMatch(/T23:59$/);
     });
   });
 });

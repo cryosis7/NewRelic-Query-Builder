@@ -23,22 +23,22 @@ test.describe('Metric Query Builder', () => {
   };
 
   test.describe('Metric Items (4.1)', () => {
-    test('4.1.1 Default metric - One metric with Transaction type and Count aggregation', async ({ page }) => {
+    test('4.1.1 Default metric - One metric with Duration type and Average aggregation', async ({ page }) => {
       // Should have exactly one metric item
       await expect(page.getByText('Metric 1')).toBeVisible();
       await expect(page.getByText('Metric 2')).not.toBeVisible();
 
-      // First metric type dropdown should show "Transaction"
+      // First metric type dropdown should show "Duration"
       const metricTypeDropdown = getMetricTypeCombobox(page);
-      await expect(metricTypeDropdown).toContainText('Transaction');
+      await expect(metricTypeDropdown).toContainText('Duration');
 
-      // Aggregation dropdown should show "Count"
+      // Aggregation dropdown should show "Average"
       const aggregationDropdown = getAggregationCombobox(page);
-      await expect(aggregationDropdown).toContainText('Count');
+      await expect(aggregationDropdown).toContainText('Average');
 
-      // Query should contain count(*)
+      // Query should contain average(duration)
       const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toContainText('count(*)');
+      await expect(queryPreview).toContainText('average(duration)');
     });
 
     test('4.1.2 Add second metric - Click Add metric, verify second appears', async ({ page }) => {
@@ -48,9 +48,9 @@ test.describe('Metric Query Builder', () => {
       // Should now have Metric 2
       await expect(page.getByText('Metric 2')).toBeVisible();
 
-      // Query should now have two count(*) expressions
+      // Query should now have two average(duration) expressions
       const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toContainText('count(*), count(*)');
+      await expect(queryPreview).toContainText('average(duration), average(duration)');
     });
 
     test('4.1.3 Remove metric - When 2+ exist, remove one', async ({ page }) => {
@@ -70,9 +70,9 @@ test.describe('Metric Query Builder', () => {
       await expect(page.getByText('Metric 1')).toBeVisible();
       await expect(page.getByText('Metric 2')).not.toBeVisible();
 
-      // Query should have single count(*)
+      // Query should have single average(duration)
       const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).not.toContainText('count(*), count(*)');
+      await expect(queryPreview).not.toContainText('average(duration), average(duration)');
     });
 
     test('4.1.4 Cannot remove last - Remove button disabled when only one metric', async ({ page }) => {
@@ -83,24 +83,26 @@ test.describe('Metric Query Builder', () => {
   });
 
   test.describe('Metric Type Selection (4.2)', () => {
-    test('4.2.1 Select Duration - Change type to Duration', async ({ page }) => {
-      // Click the metric type dropdown
+    test('4.2.1 Duration is default type with Average aggregation', async ({ page }) => {
+      // Default metric type dropdown should already show Duration
       const metricTypeDropdown = getMetricTypeCombobox(page);
-      await metricTypeDropdown.click();
-
-      // Select Duration
-      await page.getByRole('option', { name: 'Duration' }).click();
-
-      // Verify dropdown now shows Duration
       await expect(metricTypeDropdown).toContainText('Duration');
 
-      // Query should contain count(duration) by default
+      // Default aggregation should be Average
+      const aggregationDropdown = getAggregationCombobox(page);
+      await expect(aggregationDropdown).toContainText('Average');
+
+      // Query should contain average(duration) by default
       const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toContainText('count(duration)');
+      await expect(queryPreview).toContainText('average(duration)');
     });
 
     test('4.2.2 Transaction shows count(*)', async ({ page }) => {
-      // Default is Transaction, so just verify query
+      // Select Transaction type explicitly
+      await getMetricTypeCombobox(page).click();
+      await page.getByRole('option', { name: 'Transaction' }).click();
+
+      // Verify query shows count(*)
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).toContainText('count(*)');
       await expect(queryPreview).not.toContainText('count(duration)');
@@ -149,6 +151,10 @@ test.describe('Metric Query Builder', () => {
 
   test.describe('Aggregation Constraints (4.3)', () => {
     test('4.3.1 Non-duration (Transaction) only has Count option', async ({ page }) => {
+      // First, switch to Transaction type
+      await getMetricTypeCombobox(page).click();
+      await page.getByRole('option', { name: 'Transaction' }).click();
+
       // With Transaction type, click aggregation dropdown
       await getAggregationCombobox(page).click();
 
@@ -164,14 +170,7 @@ test.describe('Metric Query Builder', () => {
     });
 
     test('4.3.2 Switch from Duration resets aggregation to Count', async ({ page }) => {
-      // First, set to Duration with Average
-      await getMetricTypeCombobox(page).click();
-      await page.getByRole('option', { name: 'Duration' }).click();
-      
-      await getAggregationCombobox(page).click();
-      await page.getByRole('option', { name: 'Average' }).click();
-
-      // Verify it's set to Average
+      // Default is Duration with Average, verify it
       await expect(getAggregationCombobox(page)).toContainText('Average');
       await expect(getQueryPreview(page)).toContainText('average(duration)');
 

@@ -1,9 +1,9 @@
-import { useSetAtom } from 'jotai';
+import {useSetAtom} from 'jotai';
 import XUIButton from '@xero/xui/react/button';
 import {XUIPanelSection, XUIPanelSectionHeading} from '@xero/xui/react/panel';
 import {QUERY_PRESETS} from '../data/presets';
-import {Flex} from './layout';
-import { applyPresetAtom, resetAtom } from '../atoms';
+import {Flex, FlexItem} from './layout';
+import {applyPresetAtom, resetAtom} from '../atoms';
 
 export function CommonQueriesPanelSection() {
     const applyPreset = useSetAtom(applyPresetAtom);
@@ -13,7 +13,7 @@ export function CommonQueriesPanelSection() {
         <XUIPanelSection className="xui-padding-large">
             <XUIPanelSectionHeading headingLevel={2} className="xui-margin-bottom">Common
                 Queries</XUIPanelSectionHeading>
-            <Flex wrap gap="8px">
+            <Flex gap="8px">
                 {QUERY_PRESETS.map((preset) => (
                     <XUIButton
                         key={preset.id}
@@ -25,14 +25,16 @@ export function CommonQueriesPanelSection() {
                         {preset.name}
                     </XUIButton>
                 ))}
-                <XUIButton
-                    variant="standard"
-                    size="small"
-                    onClick={() => reset()}
-                    title="Reset to default query"
-                >
-                    Reset
-                </XUIButton>
+                <FlexItem style={{ marginLeft: 'auto' }}>
+                    <XUIButton
+                        variant="standard"
+                        size="small"
+                        onClick={() => reset()}
+                        title="Reset to default query"
+                    >
+                        Reset
+                    </XUIButton>
+                </FlexItem>
             </Flex>
         </XUIPanelSection>
     );

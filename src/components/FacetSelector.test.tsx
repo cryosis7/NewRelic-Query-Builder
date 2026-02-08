@@ -22,7 +22,8 @@ describe('FacetSelector', () => {
     expect(screen.getByRole('option', { name: 'Request URI' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Response Status' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'HTTP Method' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Transaction Name' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Name' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Application' })).toBeInTheDocument();
   });
 
   it('updates atom when a facet option is clicked', async () => {

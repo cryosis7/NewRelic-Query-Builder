@@ -5,7 +5,7 @@ import {
   XUISingleSelectOptions,
   XUISingleSelectTrigger,
 } from '@xero/xui/react/singleselect';
-import { METRIC_FIELDS } from '../types/query';
+import { SEARCH_FIELDS } from '../types/query';
 
 interface MetricTypeSelectorProps {
   selectedMetricType: string;
@@ -22,7 +22,7 @@ export function MetricTypeSelector({ selectedMetricType, onChange }: MetricTypeS
       <XUISingleSelectLabel>Metric Type</XUISingleSelectLabel>
       <XUISingleSelectTrigger />
       <XUISingleSelectOptions matchTriggerWidth={false}>
-        {METRIC_FIELDS.map(({ value, label }) => (
+        {SEARCH_FIELDS.map(({ value, label }) => (
           <XUISingleSelectOption key={value} id={value}>
             {label}
           </XUISingleSelectOption>

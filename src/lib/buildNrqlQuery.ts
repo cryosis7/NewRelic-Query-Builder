@@ -5,7 +5,7 @@ import type {
   QueryState,
   TimePeriod,
 } from '../types/query';
-import {BULK_ENDPOINT_PATHS, HEALTH_CHECK_PATHS, getFieldByName} from '../types/query';
+import {BULK_ENDPOINT_PATHS, HEALTH_CHECK_PATHS, getAggregationConfig, getFieldByName} from '../types/query';
 
 export function getDefaultTimePeriod(): TimePeriod {
   return {
@@ -56,7 +56,7 @@ export function createMetricItem(field: string, aggregationType: AggregationType
 
 function normalizeAggregationForMetric(field: string, aggregationType: AggregationType): AggregationType {
   const fieldDef = getFieldByName(field);
-  return fieldDef?.canAggregate ? aggregationType : 'count';
+  return fieldDef?.dataType === 'numeric' ? aggregationType : 'count';
 }
 
 function normalizeFuzzyStatusCode(value: string): string {
@@ -316,14 +316,10 @@ export function buildNrqlQuery(state: QueryState): string {
 }
 
 function buildMetricSelect(item: MetricQueryItem): string {
-
-  switch (item.aggregationType) {
-    case 'average':
-      return `average(${item.field})`;
-    case 'p95':
-      return `percentile(${item.field}, 95)`;
-    case 'count':
-      return `count(${item.field})`;
+  const config = getAggregationConfig(item.aggregationType);
+  if (!config) {
+    return `count(${item.field})`; // fallback
   }
+  return config.nrqlTemplate.replace('{field}', item.field);
 }
 

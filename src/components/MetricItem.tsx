@@ -10,7 +10,7 @@ import {
 import {
     AGGREGATION_TYPES,
     type AggregationType,
-    METRIC_FIELDS,
+    SEARCH_FIELDS,
     type MetricQueryItem,
     getFieldByName,
 } from '../types/query';
@@ -44,9 +44,13 @@ export function MetricItem({
     const removeFilter = useSetAtom(removeFilterAtom);
 
     const fieldDef = getFieldByName(item.field);
-    const availableAggregations = fieldDef?.canAggregate
-        ? AGGREGATION_TYPES
-        : AGGREGATION_TYPES.filter((aggregation) => aggregation.value === 'count');
+    if (!fieldDef) {
+        throw new Error('Unknown metricType: ' + item.field);
+    }
+
+    const availableAggregations = fieldDef.dataType === 'string'
+        ? AGGREGATION_TYPES.filter((aggregator => aggregator.isNumericalAggregator !== true))
+        : AGGREGATION_TYPES;
 
     return (
         <Flex justify="start" align="center">
@@ -61,7 +65,7 @@ export function MetricItem({
                     <XUISingleSelectLabel>Metric {index + 1}</XUISingleSelectLabel>
                     <XUISingleSelectTrigger/>
                     <XUISingleSelectOptions matchTriggerWidth={false}>
-                        {METRIC_FIELDS.map(({value, label}) => (
+                        {SEARCH_FIELDS.map(({value, label}) => (
                             <XUISingleSelectOption key={value} id={value}>
                                 {label}
                             </XUISingleSelectOption>
