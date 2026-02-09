@@ -230,4 +230,69 @@ describe("QueryPreview", () => {
       configurable: true,
     });
   });
+
+  describe("Save Query button", () => {
+    it("renders the Save Query button", () => {
+      const store = createStore();
+      store.set(applicationsAtom, ["global-tax-mapper-api"]);
+      store.set(environmentAtom, "prod");
+      store.set(metricItemsAtom, [createMetricItem("duration", "count")]);
+      render(
+        <Provider store={store}>
+          <QueryPreview />
+        </Provider>,
+      );
+
+      expect(
+        screen.getByRole("button", { name: /save query/i }),
+      ).toBeInTheDocument();
+    });
+
+    it("Save button is enabled for valid queries", () => {
+      const store = createStore();
+      store.set(applicationsAtom, ["global-tax-mapper-api"]);
+      store.set(environmentAtom, "prod");
+      store.set(metricItemsAtom, [createMetricItem("duration", "count")]);
+      render(
+        <Provider store={store}>
+          <QueryPreview />
+        </Provider>,
+      );
+
+      expect(screen.getByRole("button", { name: /save query/i })).toBeEnabled();
+    });
+
+    it("Save button is disabled for invalid queries", () => {
+      const store = createStore();
+      store.set(applicationsAtom, []);
+      store.set(metricItemsAtom, [createMetricItem("duration", "count")]);
+      render(
+        <Provider store={store}>
+          <QueryPreview />
+        </Provider>,
+      );
+
+      expect(
+        screen.getByRole("button", { name: /save query/i }),
+      ).toBeDisabled();
+    });
+
+    it("clicking Save Query opens the modal", async () => {
+      const user = userEvent.setup();
+      const store = createStore();
+      store.set(applicationsAtom, ["global-tax-mapper-api"]);
+      store.set(environmentAtom, "prod");
+      store.set(metricItemsAtom, [createMetricItem("duration", "count")]);
+      render(
+        <Provider store={store}>
+          <QueryPreview />
+        </Provider>,
+      );
+
+      await user.click(screen.getByRole("button", { name: /save query/i }));
+
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByLabelText(/Query Name/i)).toBeInTheDocument();
+    });
+  });
 });

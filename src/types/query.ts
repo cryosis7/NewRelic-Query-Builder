@@ -180,6 +180,14 @@ export function getOperatorsForField(
   return field?.dataType === "numeric" ? NUMERIC_OPERATORS : STRING_OPERATORS;
 }
 
+export interface SavedQuery {
+  id: string;
+  name: string;
+  nrqlQuery: string;
+  state: QueryState;
+  createdAt: string;
+}
+
 export const HEALTH_CHECK_PATHS = [
   "/ping",
   "/secureping",

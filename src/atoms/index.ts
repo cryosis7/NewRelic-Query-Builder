@@ -7,7 +7,8 @@ export {
   excludeBulkEndpointAtom,
   useTimeseriesAtom,
   facetAtom,
-} from './primitives';
+  savedQueriesAtom,
+} from "./primitives";
 
 // Metric items atoms
 export {
@@ -18,7 +19,7 @@ export {
   addFilterAtom,
   updateFilterAtom,
   removeFilterAtom,
-} from './metricItems';
+} from "./metricItems";
 
 // Derived atoms
 export {
@@ -28,7 +29,7 @@ export {
   untilDateAtom,
   untilTimeAtom,
   initializeTimePeriodAtom,
-} from './derived';
+} from "./derived";
 
 // Action atoms
 export {
@@ -38,4 +39,6 @@ export {
   setTimePeriodSinceAtom,
   setTimePeriodUntilAtom,
   setTimePeriodRelativeAtom,
-} from './actions';
+  saveQueryAtom,
+  deleteSavedQueryAtom,
+} from "./actions";
