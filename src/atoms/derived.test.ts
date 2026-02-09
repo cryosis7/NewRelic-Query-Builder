@@ -79,6 +79,34 @@ describe('Time Period Derived Atoms', () => {
 
       expect(store.get(timePeriodAtom).since).toBe('');
     });
+
+    it('defaults time to 00:00 when since is undefined in setter', () => {
+      const store = createStore();
+      store.set(timePeriodAtom, {
+        mode: 'absolute',
+        since: undefined,
+        until: '2026-01-28T15:30',
+        relative: '3h ago',
+      });
+
+      store.set(sinceDateAtom, new Date(2026, 5, 15));
+
+      expect(store.get(timePeriodAtom).since).toBe('2026-06-15T00:00');
+    });
+
+    it('defaults time to 00:00 when since has no time part', () => {
+      const store = createStore();
+      store.set(timePeriodAtom, {
+        mode: 'absolute',
+        since: '2026-01-28',
+        until: '2026-01-28T15:30',
+        relative: '3h ago',
+      });
+
+      store.set(sinceDateAtom, new Date(2026, 5, 15));
+
+      expect(store.get(timePeriodAtom).since).toBe('2026-06-15T00:00');
+    });
   });
 
   describe('sinceTimeAtom', () => {
@@ -147,6 +175,21 @@ describe('Time Period Derived Atoms', () => {
 
       expect(store.get(timePeriodAtom).since).toBe('2026-01-28T00:00');
     });
+
+    it('handles setting time when since is undefined', () => {
+      const store = createStore();
+      store.set(timePeriodAtom, {
+        mode: 'absolute',
+        since: undefined,
+        until: '2026-01-28T15:30',
+        relative: '3h ago',
+      });
+
+      store.set(sinceTimeAtom, '10:30');
+
+      // When since is undefined, date part is empty, so formatDateTime returns empty string
+      expect(store.get(timePeriodAtom).since).toBe('');
+    });
   });
 
   describe('untilDateAtom', () => {
@@ -191,6 +234,21 @@ describe('Time Period Derived Atoms', () => {
 
       expect(store.get(timePeriodAtom).until).toBe('2026-06-20T15:30');
     });
+
+    it('defaults time to 00:00 when until is undefined in setter', () => {
+      const store = createStore();
+      store.set(timePeriodAtom, {
+        mode: 'absolute',
+        since: '2026-01-28T14:30',
+        until: undefined,
+        relative: '3h ago',
+      });
+
+      store.set(untilDateAtom, new Date(2026, 5, 20));
+
+      // When until is undefined, parseDateTime('') returns time '00:00' which is truthy
+      expect(store.get(timePeriodAtom).until).toBe('2026-06-20T00:00');
+    });
   });
 
   describe('untilTimeAtom', () => {
@@ -232,6 +290,33 @@ describe('Time Period Derived Atoms', () => {
       store.set(untilTimeAtom, '25:00'); // Invalid hour
 
       expect(store.get(timePeriodAtom).until).toBe('2026-01-28T23:59');
+    });
+
+    it('returns 00:00 when until is undefined', () => {
+      const store = createStore();
+      store.set(timePeriodAtom, {
+        mode: 'relative',
+        since: undefined,
+        until: undefined,
+        relative: '3h ago',
+      });
+
+      expect(store.get(untilTimeAtom)).toBe('00:00');
+    });
+
+    it('handles setting time when until is undefined', () => {
+      const store = createStore();
+      store.set(timePeriodAtom, {
+        mode: 'absolute',
+        since: '2026-01-28T14:30',
+        until: undefined,
+        relative: '3h ago',
+      });
+
+      store.set(untilTimeAtom, '18:00');
+
+      // When until is undefined, date part is empty, so formatDateTime returns empty string
+      expect(store.get(timePeriodAtom).until).toBe('');
     });
   });
 

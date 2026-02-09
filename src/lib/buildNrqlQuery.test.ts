@@ -1,4 +1,4 @@
-import {buildNrqlQuery} from './buildNrqlQuery';
+import {buildNrqlQuery, generateId, createMetricFilter, createMetricItem} from './buildNrqlQuery';
 import type {MetricFilter, MetricQueryItem, QueryState} from '../types/query';
 import {AGGREGATION_TYPES, BULK_ENDPOINT_PATHS, getAggregationConfig, HEALTH_CHECK_PATHS} from '../types/query';
 
@@ -107,6 +107,20 @@ function buildExpectedQuery(options: ExpectedQueryOptions): string {
 }
 
 describe('buildNrqlQuery', () => {
+  describe('generateId', () => {
+    it('generates fallback id when crypto.randomUUID is unavailable', () => {
+      const originalRandomUUID = crypto.randomUUID;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (crypto as any).randomUUID = undefined;
+      try {
+        const id = generateId();
+        expect(id).toMatch(/^id-\d+-[0-9a-f]+$/);
+      } finally {
+        crypto.randomUUID = originalRandomUUID;
+      }
+    });
+  });
+
   describe('applications', () => {
     it('returns a comment when no applications are selected', () => {
       const state = createTestState({ applications: [] });
@@ -230,6 +244,18 @@ describe('buildNrqlQuery', () => {
       const result = buildNrqlQuery(state);
       expect(result).toBe('-- Select at least one metric');
     });
+
+    it('falls back to count(field) for unknown aggregation type', () => {
+      const state = createTestState({
+        metricItems: [createTestMetric({
+          field: 'duration',
+          // @ts-expect-error - testing invalid aggregation type for fallback
+          aggregationType: 'invalid_agg',
+        })],
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain('SELECT count(duration)');
+    });
   });
 
   describe('path exclusions', () => {
@@ -309,6 +335,20 @@ describe('buildNrqlQuery', () => {
       // Timezone depends on local env, so we match the pattern
       expect(result).toMatch(/SINCE '2026-01-28 08:00:00 [+-]\d{2}:\d{2}'/);
       expect(result).toMatch(/UNTIL '2026-01-28 09:00:00 [+-]\d{2}:\d{2}'/);
+    });
+
+    it('uses default since/until when absolute mode has empty strings', () => {
+      const state = createTestState({
+        timePeriod: {
+          mode: 'absolute',
+          since: '',
+          until: '',
+          relative: '1h ago',
+        },
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toContain("SINCE '");
+      expect(result).toContain("UNTIL '");
     });
   });
 
@@ -1165,6 +1205,260 @@ describe('buildNrqlQuery', () => {
         const result2 = getAggregationConfig(config.value);
         expect(result1).toEqual(result2);
       }
+    });
+  });
+
+  describe('optional chaining undefined paths (unknown fields)', () => {
+    it('createMetricFilter with unknown field defaults to > operator', () => {
+      const filter = createMetricFilter('unknownField123');
+      // fieldDef is undefined for unknown field, so fieldDef?.dataType === 'string' is false
+      // falls through to the else branch, returning '>'
+      expect(filter.field).toBe('unknownField123');
+      expect(filter.operator).toBe('>');
+    });
+
+    it('createMetricFilter with known string field defaults to = operator', () => {
+      const filter = createMetricFilter('request.uri');
+      // fieldDef is defined and dataType is 'string', so operator is '='
+      expect(filter.field).toBe('request.uri');
+      expect(filter.operator).toBe('=');
+    });
+
+    it('createMetricItem with unknown field normalizes aggregation to count', () => {
+      // normalizeAggregationForMetric: fieldDef is undefined, so fieldDef?.dataType === 'numeric' is false
+      // returns 'count' regardless of requested aggregationType
+      const item = createMetricItem('unknownField123', 'average');
+      expect(item.field).toBe('unknownField123');
+      expect(item.aggregationType).toBe('count');
+    });
+
+    it('createMetricItem with string field normalizes aggregation to count', () => {
+      // response.status has dataType 'string', so fieldDef?.dataType === 'numeric' is false
+      // returns 'count' regardless of the requested aggregationType
+      const item = createMetricItem('response.status', 'average');
+      expect(item.field).toBe('response.status');
+      expect(item.aggregationType).toBe('count');
+    });
+
+    it('createMetricItem with numeric field preserves requested aggregation', () => {
+      // duration has dataType 'numeric', so fieldDef?.dataType === 'numeric' is true
+      // returns the requested aggregationType as-is
+      const item = createMetricItem('duration', 'average');
+      expect(item.field).toBe('duration');
+      expect(item.aggregationType).toBe('average');
+    });
+
+    it('buildSingleFilterCondition treats unknown field as numeric (no string matching)', () => {
+      // Filter with an unknown field: fieldDef is undefined, so fieldDef?.dataType === 'string' is false
+      // Falls through to the numeric handling path
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            filters: [createTestFilter({ field: 'unknownField123', operator: '>', value: '42' })],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['unknownField123 > 42'],
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('buildSingleFilterCondition with unknown field and negated = operator', () => {
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            filters: [createTestFilter({ field: 'unknownField123', operator: '=', value: '42', negated: true })],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['unknownField123 != 42'],
+      });
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('parseRelativeTimeInput edge cases', () => {
+    it('returns error comment for 0h ago (amount <= 0)', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '0h ago' },
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toBe('-- Enter a valid relative time (e.g., 3h ago)');
+    });
+
+    it('returns error comment for 0m ago (amount <= 0)', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '0m ago' },
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toBe('-- Enter a valid relative time (e.g., 3h ago)');
+    });
+
+    it('parses relative time without ago suffix', () => {
+      // The regex makes "ago" optional: (ago)?
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '3h' },
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        since: 'SINCE 3 hours ago',
+        until: 'UNTIL now',
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('parses minutes without ago suffix', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '15m' },
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        since: 'SINCE 15 minutes ago',
+        until: 'UNTIL now',
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('returns error comment for empty relative time', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '' },
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toBe('-- Enter a valid relative time (e.g., 3h ago)');
+    });
+
+    it('returns error comment for whitespace-only relative time', () => {
+      const state = createTestState({
+        timePeriod: { mode: 'relative', relative: '   ' },
+      });
+      const result = buildNrqlQuery(state);
+      expect(result).toBe('-- Enter a valid relative time (e.g., 3h ago)');
+    });
+  });
+
+  describe('buildStatusFilterCondition empty conditions path', () => {
+    it('returns empty string condition for status filter with only commas', () => {
+      // value ',' splits into ['', ''] which filters to [] -> exact=[], fuzzy=[]
+      // conditions.length === 0 -> returns '' (the empty conditions branch)
+      // The empty string is not null, so it passes through buildFilterConditions filter
+      // and gets appended to WHERE clause
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            field: 'response.status',
+            filters: [createTestFilter({ field: 'response.status', operator: '=', value: ',' })],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      // The empty string condition leaks into the WHERE clause as 'AND '
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: [''],
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('returns empty string condition for status filter with only whitespace and commas', () => {
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            field: 'response.status',
+            filters: [createTestFilter({ field: 'response.status', operator: '=', value: ' , , ' })],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(response.status)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: [''],
+      });
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('non-negated string filter operators', () => {
+    it('uses = operator for non-negated string field', () => {
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            filters: [createTestFilter({ field: 'request.uri', operator: '=', value: '/api/test', negated: false })],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ['request.uri = /api/test'],
+      });
+      expect(result).toBe(expected);
+    });
+
+    it('uses IN operator for non-negated string field', () => {
+      // Tests the non-negated IN path: operator === 'IN' without negation
+      const state = createTestState({
+        metricItems: [
+          createTestMetric({
+            filters: [createTestFilter({ field: 'request.uri', operator: 'IN', value: "'/api/test', '/api/other'", negated: false })],
+          }),
+        ],
+      });
+      const result = buildNrqlQuery(state);
+      const expected = buildExpectedQuery({
+        select: 'count(duration)',
+        apps: ['global-tax-mapper-api'],
+        additionalWhereConditions: ["request.uri IN ('/api/test', '/api/other')"],
+      });
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('absolute time mode with partial values', () => {
+    it('uses default since when only since is empty', () => {
+      const state = createTestState({
+        timePeriod: {
+          mode: 'absolute',
+          since: '',
+          until: '2026-01-28T09:00',
+          relative: '1h ago',
+        },
+      });
+      const result = buildNrqlQuery(state);
+      // since is empty -> falls back to default (Date.now() - 1h)
+      // until is provided -> uses the provided value
+      expect(result).toMatch(/SINCE '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:00 [+-]\d{2}:\d{2}'/);
+      expect(result).toMatch(/UNTIL '2026-01-28 09:00:00 [+-]\d{2}:\d{2}'/);
+    });
+
+    it('uses default until when only until is empty', () => {
+      const state = createTestState({
+        timePeriod: {
+          mode: 'absolute',
+          since: '2026-01-28T08:00',
+          until: '',
+          relative: '1h ago',
+        },
+      });
+      const result = buildNrqlQuery(state);
+      // since is provided -> uses the provided value
+      // until is empty -> falls back to default (Date.now())
+      expect(result).toMatch(/SINCE '2026-01-28 08:00:00 [+-]\d{2}:\d{2}'/);
+      expect(result).toMatch(/UNTIL '\d{4}-\d{2}-\d{2} \d{2}:\d{2}:00 [+-]\d{2}:\d{2}'/);
     });
   });
 });

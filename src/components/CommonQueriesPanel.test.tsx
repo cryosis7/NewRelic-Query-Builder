@@ -119,4 +119,28 @@ describe('CommonQueriesPanel', () => {
     const buttons = screen.getAllByRole('button');
     expect(buttons).toHaveLength(4);
   });
+
+  it('resets state to defaults when Reset button is clicked', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    render(
+      <Provider store={store}>
+        <CommonQueriesPanelSection />
+      </Provider>
+    );
+
+    // Apply a preset first to change state from defaults
+    await user.click(screen.getByRole('button', { name: 'API Throughput - Last 3 Hours' }));
+    // Preset sets 4 metric items and excludeBulkEndpoint=false, different from defaults
+    expect(store.get(metricItemsAtom)).toHaveLength(4);
+    expect(store.get(excludeHealthChecksAtom)).toBe(true);
+
+    // Click the Reset button
+    await user.click(screen.getByRole('button', { name: 'Reset' }));
+
+    // Verify state was reset to defaults
+    expect(store.get(applicationsAtom)).toEqual(['global-tax-mapper-api']);
+    expect(store.get(metricItemsAtom)).toHaveLength(1);
+    expect(store.get(excludeHealthChecksAtom)).toBe(true);
+  });
 });

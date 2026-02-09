@@ -199,4 +199,49 @@ describe('FilterRow', () => {
 
     expect(onUpdate).toHaveBeenCalledWith('metric-1', 'filter-1', { negated: false });
   });
+
+  it('shows appropriate placeholder for request.uri field', () => {
+    render(
+      <FilterRow
+        filter={createFilter({ field: 'request.uri', operator: '=' })}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+    const input = screen.getByPlaceholderText(/e\.g\. \/api\/endpoint/i);
+    expect(input).toBeInTheDocument();
+  });
+
+  it('calls onUpdate with new field when a different field is selected', async () => {
+    const user = userEvent.setup();
+    render(
+      <FilterRow
+        filter={createFilter({ field: 'duration' })}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+    const comboboxes = screen.getAllByRole('combobox');
+    await user.click(comboboxes[0]);
+    await user.click(screen.getByRole('option', { name: 'Response Status' }));
+    expect(onUpdate).toHaveBeenCalledWith('metric-1', 'filter-1', { field: 'response.status' });
+  });
+
+  it('calls onUpdate with new operator when a different operator is selected', async () => {
+    const user = userEvent.setup();
+    render(
+      <FilterRow
+        filter={createFilter({ field: 'duration', operator: '>' })}
+        metricItemId="metric-1"
+        onUpdate={onUpdate}
+        onRemove={onRemove}
+      />
+    );
+    const comboboxes = screen.getAllByRole('combobox');
+    await user.click(comboboxes[1]);
+    await user.click(screen.getByRole('option', { name: '>=' }));
+    expect(onUpdate).toHaveBeenCalledWith('metric-1', 'filter-1', { operator: '>=' });
+  });
 });

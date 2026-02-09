@@ -129,4 +129,11 @@ describe('Flex', () => {
     expect(getByText('Child 1')).toBeInTheDocument();
     expect(getByText('Child 2')).toBeInTheDocument();
   });
+
+  it('applies debug border when debug prop is true', () => {
+    const { container } = render(<Flex debug gap="8px">Content</Flex>);
+    const flexDiv = container.firstChild as HTMLElement;
+    expect(flexDiv).toHaveStyle({ gap: '8px' });
+    expect(flexDiv.style.border).toMatch(/2px solid/);
+  });
 });

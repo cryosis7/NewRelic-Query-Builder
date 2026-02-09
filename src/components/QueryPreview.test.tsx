@@ -174,4 +174,39 @@ describe('QueryPreview', () => {
     const pre = screen.getByText(/SELECT count\(duration\)/);
     expect(pre).toHaveStyle({ backgroundColor: '#f5f5f5' });
   });
+
+  it('handles clipboard write failure gracefully', async () => {
+    const user = userEvent.setup();
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api']);
+    store.set(environmentAtom, 'prod');
+    store.set(metricItemsAtom, [createMetricItem('duration', 'count')]);
+
+    const originalClipboard = navigator.clipboard;
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn().mockRejectedValue(new Error('Clipboard access denied')) },
+      writable: true,
+      configurable: true,
+    });
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    render(
+      <Provider store={store}>
+        <QueryPreview />
+      </Provider>
+    );
+
+    await user.click(screen.getByRole('button', { name: /copy query/i }));
+
+    await waitFor(() => {
+      expect(consoleSpy).toHaveBeenCalledWith('Failed to copy:', expect.any(Error));
+    });
+
+    // Button should NOT change to "Copied!" on failure
+    expect(screen.getByRole('button', { name: /copy query/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /copied/i })).not.toBeInTheDocument();
+
+    consoleSpy.mockRestore();
+    Object.defineProperty(navigator, 'clipboard', { value: originalClipboard, writable: true, configurable: true });
+  });
 });

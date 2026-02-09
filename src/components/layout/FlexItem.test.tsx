@@ -136,4 +136,46 @@ describe('FlexItem', () => {
     );
     expect(getByText('Child content')).toBeInTheDocument();
   });
+
+  it('applies debug border when debug prop is true', () => {
+    const { container } = render(<FlexItem debug>Content</FlexItem>);
+    const itemDiv = container.firstChild as HTMLElement;
+    expect(itemDiv.style.border).toMatch(/2px solid/);
+  });
+
+  it('applies alignContent with start value', () => {
+    const { container } = render(<FlexItem alignContent="start">Content</FlexItem>);
+    const itemDiv = container.firstChild as HTMLElement;
+    expect(itemDiv).toHaveStyle({ alignContent: 'flex-start' });
+  });
+
+  it('applies alignContent with center value', () => {
+    const { container } = render(<FlexItem alignContent="center">Content</FlexItem>);
+    const itemDiv = container.firstChild as HTMLElement;
+    expect(itemDiv).toHaveStyle({ alignContent: 'center' });
+  });
+
+  it('applies alignContent with end value', () => {
+    const { container } = render(<FlexItem alignContent="end">Content</FlexItem>);
+    const itemDiv = container.firstChild as HTMLElement;
+    expect(itemDiv).toHaveStyle({ alignContent: 'flex-end' });
+  });
+
+  it('applies alignContent with stretch value', () => {
+    const { container } = render(<FlexItem alignContent="stretch">Content</FlexItem>);
+    const itemDiv = container.firstChild as HTMLElement;
+    expect(itemDiv).toHaveStyle({ alignContent: 'stretch' });
+  });
+
+  it('applies alignContent with space-between value', () => {
+    const { container } = render(<FlexItem alignContent="space-between">Content</FlexItem>);
+    const itemDiv = container.firstChild as HTMLElement;
+    expect(itemDiv).toHaveStyle({ alignContent: 'space-between' });
+  });
+
+  it('applies alignContent with space-around value', () => {
+    const { container } = render(<FlexItem alignContent="space-around">Content</FlexItem>);
+    const itemDiv = container.firstChild as HTMLElement;
+    expect(itemDiv).toHaveStyle({ alignContent: 'space-around' });
+  });
 });

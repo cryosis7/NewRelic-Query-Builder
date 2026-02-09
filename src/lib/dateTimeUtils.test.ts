@@ -26,6 +26,11 @@ describe('dateTimeUtils', () => {
       const result = parseDateTime('2026-01-28T');
       expect(result).toEqual({ date: '2026-01-28', time: '00:00' });
     });
+
+    it('parses value with empty date part before T separator', () => {
+      const result = parseDateTime('T14:30');
+      expect(result).toEqual({ date: '', time: '14:30' });
+    });
   });
 
   describe('formatDateTime', () => {
@@ -71,6 +76,11 @@ describe('dateTimeUtils', () => {
 
     it('returns undefined for partial date string', () => {
       const result = parseDateStringToDate('2026-01');
+      expect(result).toBeUndefined();
+    });
+
+    it('returns undefined for year-only input', () => {
+      const result = parseDateStringToDate('2026');
       expect(result).toBeUndefined();
     });
 

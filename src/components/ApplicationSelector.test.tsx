@@ -71,4 +71,21 @@ describe('ApplicationSelector', () => {
 
     expect(screen.getByText('Applications')).toBeInTheDocument();
   });
+
+  it('removes an application when a selected checkbox is clicked', async () => {
+    const store = createStore();
+    store.set(applicationsAtom, ['global-tax-mapper-api', 'global-tax-mapper-bff']);
+
+    render(
+      <Provider store={store}>
+        <ApplicationSelector />
+      </Provider>
+    );
+
+    await userEvent.click(screen.getByLabelText('API'));
+
+    const result = store.get(applicationsAtom);
+    expect(result).not.toContain('global-tax-mapper-api');
+    expect(result).toContain('global-tax-mapper-bff');
+  });
 });
