@@ -61,7 +61,7 @@ describe('CommonQueriesPanel', () => {
     expect(store.get(metricItemsAtom)?.[0]?.field).toBe('response.status');
   });
 
-  it('updates atoms with all apps when GTM Latency button is clicked', async () => {
+  it('updates atoms when API Latency button is clicked', async () => {
     const user = userEvent.setup();
     const store = createStore();
     render(
@@ -70,13 +70,9 @@ describe('CommonQueriesPanel', () => {
       </Provider>
     );
     
-    await user.click(screen.getByRole('button', { name: 'GTM Latency - Last 3 Hours' }));
+    await user.click(screen.getByRole('button', { name: 'API Latency - Last 3 Hours' }));
     
-    expect(store.get(applicationsAtom)).toEqual([
-      'global-tax-mapper-api',
-      'global-tax-mapper-bff', 
-      'global-tax-mapper-integrator-api'
-    ]);
+    expect(store.get(applicationsAtom)).toEqual(['global-tax-mapper-api']);
   });
 
   it('updates metricItems atom when API Error Count button is clicked', async () => {

@@ -97,23 +97,30 @@ test.describe('Metric Query Builder', () => {
       await expect(queryPreview).toContainText('average(duration)');
     });
 
-    test('4.2.2 Transaction shows count(*)', async ({ page }) => {
-      // Select Transaction type explicitly
+    test('4.2.2 Request URI with Count shows count(request.uri)', async ({ page }) => {
+      // Select Request URI type
       await getMetricTypeCombobox(page).click();
-      await page.getByRole('option', { name: 'Transaction' }).click();
+      await page.getByRole('option', { name: 'Request URI' }).click();
 
-      // Verify query shows count(*)
+      // Select Count aggregation
+      await getAggregationCombobox(page).click();
+      await page.getByRole('option', { name: 'Count' }).click();
+
+      // Verify query shows count(request.uri)
       const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toContainText('count(*)');
-      await expect(queryPreview).not.toContainText('count(duration)');
+      await expect(queryPreview).toContainText('count(request.uri)');
     });
 
-    test('4.2.3 Response Status shows count(response.status)', async ({ page }) => {
+    test('4.2.3 Response Status with Count shows count(response.status)', async ({ page }) => {
       // Click the metric type dropdown
       await getMetricTypeCombobox(page).click();
 
       // Select Response Status
       await page.getByRole('option', { name: 'Response Status' }).click();
+
+      // Select Count aggregation
+      await getAggregationCombobox(page).click();
+      await page.getByRole('option', { name: 'Count' }).click();
 
       // Query should contain count(response.status)
       const queryPreview = getQueryPreview(page);
@@ -150,37 +157,45 @@ test.describe('Metric Query Builder', () => {
   });
 
   test.describe('Aggregation Constraints (4.3)', () => {
-    test('4.3.1 Non-duration (Transaction) only has Count option', async ({ page }) => {
-      // First, switch to Transaction type
+    test('4.3.1 Non-duration (Response Status) only has non-numerical aggregation options', async ({ page }) => {
+      // First, switch to Response Status (a string field)
       await getMetricTypeCombobox(page).click();
-      await page.getByRole('option', { name: 'Transaction' }).click();
+      await page.getByRole('option', { name: 'Response Status' }).click();
 
-      // With Transaction type, click aggregation dropdown
+      // With string field, click aggregation dropdown
       await getAggregationCombobox(page).click();
 
-      // Should only have Count option
+      // Should have Count and Unique List options
       const countOption = page.getByRole('option', { name: 'Count' });
+      const uniqueListOption = page.getByRole('option', { name: 'Unique List' });
       await expect(countOption).toBeVisible();
+      await expect(uniqueListOption).toBeVisible();
 
-      // Should NOT have Average or 95th Percentile
+      // Should NOT have numerical aggregation options
       const averageOption = page.getByRole('option', { name: 'Average' });
       const p95Option = page.getByRole('option', { name: '95th Percentile' });
+      const medianOption = page.getByRole('option', { name: 'Median' });
       await expect(averageOption).not.toBeVisible();
       await expect(p95Option).not.toBeVisible();
+      await expect(medianOption).not.toBeVisible();
     });
 
-    test('4.3.2 Switch from Duration resets aggregation to Count', async ({ page }) => {
+    test('4.3.2 Switch from Duration to string field and select Count updates query', async ({ page }) => {
       // Default is Duration with Average, verify it
       await expect(getAggregationCombobox(page)).toContainText('Average');
       await expect(getQueryPreview(page)).toContainText('average(duration)');
 
-      // Now switch metric type to Transaction
+      // Now switch metric type to Response Status (string field)
       await getMetricTypeCombobox(page).click();
-      await page.getByRole('option', { name: 'Transaction' }).click();
+      await page.getByRole('option', { name: 'Response Status' }).click();
 
-      // Aggregation should reset to Count
+      // Select Count aggregation (aggregation does not auto-reset)
+      await getAggregationCombobox(page).click();
+      await page.getByRole('option', { name: 'Count' }).click();
+
+      // Verify aggregation shows Count and query is updated
       await expect(getAggregationCombobox(page)).toContainText('Count');
-      await expect(getQueryPreview(page)).toContainText('count(*)');
+      await expect(getQueryPreview(page)).toContainText('count(response.status)');
     });
   });
 });

@@ -1,232 +1,105 @@
-# Lib - Pure Business Logic Functions
+# Lib - Pure Business Logic
 
-This folder contains all pure, testable business logic functions. These functions have no side effects and produce deterministic output.
+Stateless, deterministic functions with no React or Jotai dependencies. Two files:
 
-## Purpose
+## Files
 
-The `lib/` folder houses stateless business logic that:
-- Generates NRQL queries from application state
-- Creates domain objects (metric items, filters)
-- Performs data transformations and validations
-- Contains no React, no state management, no side effects
+### `buildNrqlQuery.ts`
 
----
+NRQL query generation and factory functions.
 
-## Key Exports
-
-### `buildNrqlQuery(state: QueryState): string`
-
-Main function that generates NRQL query strings from application state.
-
-### `createMetricItem(field: string, aggregationType: AggregationType): MetricQueryItem`
-
-Factory function for creating metric query items with proper defaults.
-
-### `createMetricFilter(field: string, value: string): MetricFilter`
-
-Factory function for creating filter objects.
-
----
-
-## Pure Function Pattern
-
-All business logic must be pure functions: no side effects, deterministic output based solely on inputs.
-
+**Exports:**
 ```ts
-// buildNrqlQuery.ts
-
-// ✅ Pure function - no side effects, deterministic output
-export function buildNrqlQuery(state: QueryState): string {
-  // Validation
-  if (state.applications.length === 0) {
-    return '-- Select at least one application';
-  }
-  
-  // Build query parts
-  const appNames = state.applications.map(app => `${app}-${state.environment}`);
-  const fromClause = 'FROM Transaction';
-  const whereClause = buildWhereClause(state);
-  const selectClause = buildSelectClause(state.metricItems);
-  
-  // Assemble query
-  const queryParts = [
-    fromClause,
-    selectClause,
-    whereClause,
-    // ... other clauses
-  ];
-  
-  return queryParts.join('\n');
-}
-
-// ✅ Helper functions are also pure
-function buildWhereClause(state: QueryState): string {
-  const conditions: string[] = [];
-  
-  const appNames = state.applications
-    .map(app => `'${app}-${state.environment}'`)
-    .join(', ');
-  conditions.push(`appName IN (${appNames})`);
-  
-  if (state.excludeHealthChecks) {
-    conditions.push(buildHealthCheckExclusion());
-  }
-  
-  return `WHERE ${conditions.join(' AND ')}`;
-}
+buildNrqlQuery(state: QueryState): string       // Main: state → NRQL string
+createMetricItem(field, aggregationType): MetricQueryItem
+createMetricFilter(field?: string): MetricFilter // field defaults to 'duration'; operator auto-set by dataType
+getDefaultTimePeriod(): TimePeriod               // { mode: 'relative', relative: '3h ago' }
+getInitialState(): QueryState                    // Full default state for reset
+generateId(): string                             // crypto.randomUUID() with fallback
 ```
 
-**Guidelines:**
-- Function output depends only on inputs
-- No external state access
-- No side effects (no mutations, no I/O)
-- No async operations
-- Deterministic: same inputs always produce same outputs
+### `dateTimeUtils.ts`
 
----
+Date/time parsing utilities for the absolute time period mode.
 
-## Factory Function Pattern
-
-Factory functions create domain objects with proper initialization and defaults.
-
+**Exports:**
 ```ts
-// ✅ Factory functions for creating domain objects
-export function createMetricItem(
-  field: string, 
-  aggregationType: AggregationType
-): MetricQueryItem {
-  return {
-    id: generateId(),
-    field,
-    aggregationType: normalizeAggregationForMetric(field, aggregationType),
-    filters: [],
-  };
-}
-
-export function createMetricFilter(field: string, value: string): MetricFilter {
-  return {
-    id: generateId(),
-    field,
-    operator: '=',
-    value,
-  };
-}
-
-// Helper for generating unique IDs
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-}
+parseDateTime(value: string): { date: string; time: string }
+formatDateTime(date: string, time: string): string
+parseDateStringToDate(date: string): Date | undefined
+formatDateToString(date: Date | null | undefined): string
 ```
 
-**Guidelines:**
-- Initialize all required fields
-- Apply sensible defaults
-- Use helper functions for common operations (e.g., ID generation)
-- Return properly typed objects
+## Key Logic
 
----
+### Config-Driven Aggregation
 
-## Testing Pure Functions
-
-Pure functions are easy to test because they have no dependencies.
-
-### Test Pattern
-
+SELECT clauses use `nrqlTemplate` from `AGGREGATION_TYPES`:
 ```ts
-import { buildNrqlQuery, createMetricItem } from './buildNrqlQuery';
-import type { QueryState } from '../types/query';
+const config = getAggregationConfig(item.aggregationType);
+config.nrqlTemplate.replace('{field}', item.field)
+// 'average({field})' → 'average(duration)'
+// 'percentile({field}, 95)' → 'percentile(duration, 95)'
+```
 
-// ✅ Helper function to create test state
+### Filter-Aware SELECT
+
+When all metrics share the same filters, filters are lifted to a global WHERE clause. When filters differ, each metric is wrapped in `filter()`:
+```sql
+-- Shared filters → global WHERE
+SELECT count(*), average(duration) WHERE response.status = 200
+
+-- Different filters → per-metric filter()
+SELECT filter(count(*), WHERE response.status LIKE '4%'), filter(count(*), WHERE response.status LIKE '5%')
+```
+
+### Smart Status Code Filtering
+
+`response.status` filters are parsed intelligently:
+- Exact: `404` → `response.status = 404`
+- Multiple: `404, 503` → `response.status IN (404, 503)`
+- Fuzzy: `4xx` → `response.status LIKE '4%'`
+- Mixed: combined with `OR`
+
+### Filter Negation
+
+When `MetricFilter.negated` is true, operators flip:
+- `=` → `!=`, `>` → `<=`, `>=` → `<`, `<` → `>=`, `<=` → `>`
+- `LIKE` → `NOT LIKE`, `IN` → `NOT IN`
+
+### Path Exclusions
+
+- `excludeHealthChecks` → `request.uri NOT IN ('/ping', '/secureping', ...)`
+- `excludeBulkEndpoint` → `request.uri NOT IN ('/accountsV2/bulk')`
+- Both true → merged into single `NOT IN` clause
+
+### Factory Function Behavior
+
+`createMetricFilter(field?)`:
+- `field` defaults to `'duration'`
+- Auto-selects operator based on field dataType: string → `=`, numeric → `>`
+- Sets `negated: false`, `value: ''`
+
+`createMetricItem(field, aggregationType)`:
+- Normalizes aggregation: string fields always get `'count'` (via `normalizeAggregationForMetric`)
+
+## Testing
+
+Tests use a `createTestState()` helper for minimal boilerplate:
+```ts
 function createTestState(overrides: Partial<QueryState> = {}): QueryState {
-  return {
-    applications: ['global-tax-mapper-api'],
-    environment: 'prod',
-    metricItems: [createMetricItem('duration', 'count')],
-    timePeriod: { mode: 'relative', relative: '3h ago' },
-    excludeHealthChecks: true,
-    useTimeseries: true,
-    facet: 'request.uri',
-    ...overrides,
-  };
+  return { ...getInitialState(), ...overrides };
 }
-
-describe('buildNrqlQuery', () => {
-  it('generates basic query', () => {
-    const state = createTestState();
-    const result = buildNrqlQuery(state);
-    
-    expect(result).toContain('FROM Transaction');
-    expect(result).toContain("appName IN ('global-tax-mapper-api-prod')");
-    expect(result).toContain('count(*)');
-  });
-
-  it('handles multiple applications', () => {
-    const state = createTestState({
-      applications: ['global-tax-mapper-api', 'global-tax-mapper-bff'],
-    });
-    const result = buildNrqlQuery(state);
-    
-    expect(result).toContain('global-tax-mapper-api-prod');
-    expect(result).toContain('global-tax-mapper-bff-prod');
-  });
-
-  it('returns error message for empty applications', () => {
-    const state = createTestState({ applications: [] });
-    const result = buildNrqlQuery(state);
-    
-    expect(result).toBe('-- Select at least one application');
-  });
-});
-
-describe('createMetricItem', () => {
-  it('creates metric item with defaults', () => {
-    const item = createMetricItem('duration', 'count');
-    
-    expect(item.field).toBe('duration');
-    expect(item.aggregationType).toBe('count');
-    expect(item.filters).toEqual([]);
-    expect(item.id).toBeDefined();
-  });
-});
 ```
-
-### Testing Guidelines
-
-- Use helper functions like `createTestState()` to reduce boilerplate
-- Test edge cases (empty arrays, null values, boundary conditions)
-- Test each function in isolation
-- Use descriptive test names that explain the scenario
-- Assert on specific output values, not just truthiness
-
-### Running Tests
 
 ```bash
-# Run all lib tests
-npm run test -- src/lib
-
-# Run single test file
-npm run test:run -- src/lib/buildNrqlQuery.test.ts
-
-# Type check single file
-npx tsc --noEmit src/lib/buildNrqlQuery.ts
+npm run test -- src/lib/buildNrqlQuery.test.ts
+npm run test -- src/lib/dateTimeUtils.test.ts
 ```
 
----
+## Rules
 
-## Do
-
-- Keep business logic in pure functions
-- Make functions deterministic (same inputs → same outputs)
-- Use factory functions for creating domain objects
+- No side effects, no external state, no async
+- Same inputs → same outputs always
 - Import types from `../types/query`
-- Write comprehensive tests for all functions
-- Use helper functions to reduce test boilerplate
-- Test edge cases and error conditions
-
-## Don't
-
-- Don't access external state (React context, Jotai atoms, etc.)
-- Don't perform side effects (mutations, I/O, API calls)
-- Don't use async functions (unless absolutely necessary)
-- Don't import React or Jotai in lib files
-- Don't skip tests - pure functions are easy to test
+- Don't import React or Jotai

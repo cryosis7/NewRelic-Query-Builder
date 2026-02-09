@@ -21,7 +21,7 @@ describe('FacetSelector', () => {
     expect(screen.getByRole('option', { name: 'No Facet' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Request URI' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Response Status' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'HTTP Method' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Request Method' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Name' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Application' })).toBeInTheDocument();
   });
@@ -38,9 +38,9 @@ describe('FacetSelector', () => {
 
     // Open the dropdown first
     await user.click(screen.getByRole('combobox'));
-    await user.click(screen.getByRole('option', { name: 'HTTP Method' }));
+    await user.click(screen.getByRole('option', { name: 'Request Method' }));
 
-    expect(store.get(facetAtom)).toBe('http.method');
+    expect(store.get(facetAtom)).toBe('request.method');
   });
 
   it('handles "none" selection', async () => {

@@ -12,8 +12,8 @@ test.describe('Time Period Selection', () => {
   test.describe('Absolute/Exact Time Mode', () => {
     test('3.1.1 Default mode - Exact radio is selected with Since/Until inputs visible', async ({ page }) => {
       // Switch to Exact mode first (default is Relative)
+      await page.getByText('Exact').click();
       const exactRadio = page.getByRole('radio', { name: 'Exact' });
-      await exactRadio.click();
 
       // Exact radio should now be checked
       await expect(exactRadio).toBeChecked();
@@ -40,7 +40,7 @@ test.describe('Time Period Selection', () => {
 
     test('3.1.2 Time inputs update the query', async ({ page }) => {
       // Switch to Exact mode first (default is Relative)
-      await page.getByRole('radio', { name: 'Exact' }).click();
+      await page.getByText('Exact').click();
 
       // Get the Since time input and clear it, then type a new time
       const sinceTimeInput = page.getByRole('textbox', { name: 'Time' }).first();
@@ -56,9 +56,8 @@ test.describe('Time Period Selection', () => {
 
   test.describe('Relative Time Mode', () => {
     test('3.2.1 Switch to relative - Relative input appears, Since/Until disappear', async ({ page }) => {
-      // Click Relative radio
+      // Default is already Relative, but verify by ensuring we're in relative mode
       const relativeRadio = page.getByRole('radio', { name: 'Relative' });
-      await relativeRadio.click();
 
       // Relative radio should now be checked
       await expect(relativeRadio).toBeChecked();
@@ -89,8 +88,7 @@ test.describe('Time Period Selection', () => {
     });
 
     test('3.2.3 Valid formats - "15m", "1h", "7d" produce valid queries', async ({ page }) => {
-      // Switch to relative mode
-      await page.getByRole('radio', { name: 'Relative' }).click();
+      // Default is already Relative mode
       const relativeInput = page.getByRole('textbox', { name: 'Relative' });
       const queryPreview = getQueryPreview(page);
 
@@ -108,8 +106,7 @@ test.describe('Time Period Selection', () => {
     });
 
     test('3.2.4 Select preset from dropdown', async ({ page }) => {
-      // Switch to relative mode
-      await page.getByRole('radio', { name: 'Relative' }).click();
+      // Default is already Relative mode
 
       // Click the dropdown to open options
       const dropdown = page.getByRole('combobox', { name: 'Time Period' });
@@ -128,8 +125,7 @@ test.describe('Time Period Selection', () => {
     });
 
     test('3.2.5 Invalid relative input - Shows error message', async ({ page }) => {
-      // Switch to relative mode
-      await page.getByRole('radio', { name: 'Relative' }).click();
+      // Default is already Relative mode
       const relativeInput = page.getByRole('textbox', { name: 'Relative' });
       
       // Type invalid value
@@ -141,11 +137,8 @@ test.describe('Time Period Selection', () => {
     });
 
     test('3.2.6 Switch back to Exact mode', async ({ page }) => {
-      // Switch to relative mode first
-      await page.getByRole('radio', { name: 'Relative' }).click();
-
-      // Then switch back to exact
-      await page.getByRole('radio', { name: 'Exact' }).click();
+      // Default is already Relative mode, switch to Exact
+      await page.getByText('Exact').click();
 
       // Exact should be checked
       const exactRadio = page.getByRole('radio', { name: 'Exact' });

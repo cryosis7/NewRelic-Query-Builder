@@ -1,31 +1,22 @@
 # NR-Query-Builder Agent Instructions
 
-A React + TypeScript + Vite application for building New Relic NRQL queries targeting Global Tax Mapper (GTM) applications.
+React + TypeScript + Vite app for building New Relic NRQL queries targeting Global Tax Mapper (GTM) applications. Uses **@xero/xui** design system and **Jotai** for state management.
 
-## Architecture Overview
+## Build and Test
 
-### Architectural Diagram
-
-```
-App.tsx (Jotai Provider, Layout)
-  │
-  ├─ Components Layer (src/components/)
-  │   └─ ApplicationSelector, EnvironmentSelector, MetricQueryBuilder, etc.
-  │      └─ useAtom(...)
-  │
-  └─ Atoms Layer (src/atoms/)
-      ├─ Primitive Atoms: applicationsAtom, environmentAtom, timePeriodAtom, facetAtom, etc.
-      ├─ Derived Atoms: nrqlQueryAtom ← buildNrqlQuery(QueryState)
-      └─ Action Atoms: applyPresetAtom, resetAtom, addMetricItemAtom, updateFilterAtom
-          │
-          ├─ Pure Functions (src/lib/)
-          │   └─ buildNrqlQuery.ts: buildNrqlQuery(state), createMetricItem(), createMetricFilter()
-          │
-          └─ Types & Constants (src/types/)
-              └─ query.ts: QueryState, Application, Environment, NRQL_FIELDS, etc.
+```bash
+npm run dev        # Dev server (localhost:5173)
+npm run test   # Run unit tests (always run after changes)
+npm run test:e2e   # Run Playwright E2E tests
+npm run lint       # Lint
+npm run build      # Build
 ```
 
-### Data Flow Pattern
+Note: This project uses `rolldown-vite` (aliased via npm overrides), not standard Vite.
+
+## Architecture
+
+### Data Flow
 
 ```
 User Interaction → Component → useAtom(primitiveAtom) → State Update
@@ -41,166 +32,133 @@ User Interaction → Component → useAtom(primitiveAtom) → State Update
 
 | Layer | Location | Responsibility |
 |-------|----------|----------------|
-| **Components** | `src/components/` | UI rendering, user interaction, atom consumption |
-| **Atoms** | `src/atoms/` | State storage, derived computations, action handlers |
-| **Pure Functions** | `src/lib/` | Stateless business logic, NRQL generation |
-| **Types** | `src/types/` | TypeScript types, domain constants, field definitions |
-| **Presets** | `src/data/` | Pre-configured query combinations |
+| **Components** | `src/components/` | UI rendering via XUI, atom consumption |
+| **Atoms** | `src/atoms/` | Primitives, derived, actions, CRUD atoms |
+| **Pure Functions** | `src/lib/` | Stateless NRQL generation, date/time utils |
+| **Types** | `src/types/query.ts` | All types, interfaces, constants, helpers |
+| **Presets** | `src/data/presets.ts` | Pre-configured `QueryPreset` definitions |
+| **E2E** | `e2e/` | Playwright browser tests |
 
----
-
-## How to Use This Codebase
-
-### State Management (`src/atoms/`)
-
-Import atoms from `src/atoms/index.ts` (barrel export). The atoms folder uses a layered Jotai pattern:
-- **Primitive atoms**: Store individual pieces of state
-- **Derived atoms**: Compute values from other atoms (e.g., `nrqlQueryAtom`)
-- **Action atoms**: Coordinate multi-atom updates (e.g., `applyPresetAtom`)
-- **CRUD atoms**: Manage array operations (add, update, remove)
-
-See [`src/atoms/AGENTS.md`](src/atoms/AGENTS.md) for detailed atom creation patterns.
-
-### Components (`src/components/`)
-
-Import components from `src/components/index.ts` (barrel export). Components:
-- Consume atoms via `useAtom()`
-- Use XUI components exclusively (never raw HTML)
-- Have minimal internal logic
-- Co-locate tests with implementation
-
-See [`src/components/AGENTS.md`](src/components/AGENTS.md) for component patterns, XUI usage, and testing.
-
-### Business Logic (`src/lib/`)
-
-Pure functions for stateless business logic:
-- No side effects, deterministic output
-- Main export: `buildNrqlQuery(state: QueryState): string`
-- Factory functions: `createMetricItem()`, `createMetricFilter()`
-
-See [`src/lib/AGENTS.md`](src/lib/AGENTS.md) for pure function patterns and testing.
-
-### Types & Constants (`src/types/`)
-
-Single source of truth for types and domain constants:
-- All types defined in `query.ts`
-- Constants: `APPLICATIONS`, `ENVIRONMENTS`, `NRQL_FIELDS`, `HEALTH_CHECK_PATHS`
-- Always use constants instead of hardcoding values
-
-See [`src/types/AGENTS.md`](src/types/AGENTS.md) for type usage and domain knowledge.
-
-### Presets (`src/data/`)
-
-Pre-configured query combinations:
-- Common monitoring scenarios (error rate, latency, throughput)
-- Applied via `applyPresetAtom`
-
-See [`src/data/AGENTS.md`](src/data/AGENTS.md) for preset structure and examples.
-
-### E2E Tests (`e2e/`)
-
-Playwright end-to-end tests:
-- Test complete user workflows
-- Use semantic selectors (`getByRole`, `getByLabel`)
-- Run with `npm run test:e2e` or `npm run test:e2e:ui`
-
-See [`e2e/AGENTS.md`](e2e/AGENTS.md) for E2E testing patterns.
-
----
+Each layer has its own `AGENTS.md` with detailed patterns — see the relevant file when working in that area.
 
 ## Project Structure
 
 ```
 src/
-├── atoms/                    # Jotai atoms (state management)
-│   ├── index.ts              # Barrel export for all atoms
+├── atoms/
+│   ├── index.ts              # Barrel export
 │   ├── primitives.ts         # Base state atoms
-│   ├── derived.ts            # Computed atoms (nrqlQueryAtom)
+│   ├── derived.ts            # nrqlQueryAtom, date/time atoms
+│   ├── derived.test.ts       # Tests for derived atoms
 │   ├── actions.ts            # Write-only action atoms
-│   └── metricItems.ts        # CRUD atoms for metric items
-├── components/               # React components (one per file)
-│   ├── index.ts              # Barrel export for all components
-│   ├── ComponentName.tsx     # Component implementation
-│   └── ComponentName.test.tsx # Co-located tests
-├── lib/                      # Pure business logic functions
-│   ├── buildNrqlQuery.ts     # NRQL generation
-│   └── buildNrqlQuery.test.ts
+│   └── metricItems.ts        # CRUD atoms for metric items + filters
+├── components/
+│   ├── index.ts              # Barrel export
+│   ├── layout/               # Flex, FlexItem layout components
+│   │   └── index.ts
+│   ├── ApplicationSelector.tsx / .test.tsx
+│   ├── EnvironmentSelector.tsx / .test.tsx
+│   ├── MetricQueryBuilder.tsx / .test.tsx
+│   ├── MetricItem.tsx / .test.tsx
+│   ├── MetricTypeSelector.tsx / .test.tsx
+│   ├── AggregationTypeSelector.tsx / .test.tsx
+│   ├── FilterRow.tsx / .test.tsx
+│   ├── TimePeriodSelector.tsx / .test.tsx
+│   ├── DateTimeInput.tsx         # Composite: XUIDateInput + TimePicker
+│   ├── TimePicker.tsx            # Time input wrapper
+│   ├── QueryOptions.tsx / .test.tsx
+│   ├── QueryPreview.tsx / .test.tsx
+│   ├── FacetSelector.tsx / .test.tsx
+│   ├── SectionRule.tsx / .test.tsx
+│   └── CommonQueriesPanelSection.tsx / .test.tsx
+├── lib/
+│   ├── buildNrqlQuery.ts     # NRQL generation + factory functions
+│   ├── buildNrqlQuery.test.ts
+│   ├── dateTimeUtils.ts      # Date/time parsing utilities
+│   └── dateTimeUtils.test.ts
 ├── types/
-│   └── query.ts              # All types, constants, domain config
+│   └── query.ts              # All types, constants, derived constants, helpers
 ├── data/
-│   └── presets.ts            # Query preset definitions
+│   └── presets.ts            # QueryPreset definitions (3 presets)
 ├── test/
-│   └── setup.ts              # Vitest setup
+│   └── setup.ts              # Vitest setup (@testing-library/jest-dom)
 ├── App.tsx                   # Main app with Jotai Provider
 └── main.tsx                  # Entry point
-e2e/                          # Playwright E2E tests
+e2e/                          # Playwright E2E tests (8 spec files)
 ```
 
----
+## Project Conventions
 
-## Quick Reference
+### Critical Rules
 
-### Do
+1. **Always use XUI components** — never raw HTML form elements (`<input>`, `<button>`, `<select>`)
+2. **Tests required** — update tests when modifying code, run `npm run test` after changes
+3. **Jotai atoms for state** — state lives in `src/atoms/`, components consume via `useAtom`
+4. **Use constants** — import from `src/types/query.ts`, never hardcode values
+5. **Barrel exports** — import from `src/atoms/index.ts` and `src/components/index.ts`
 
-- Delegate tasks to subagents
-- Update tests when modifying code
-- Always run tests after modifications
+### XUI `key` Pattern for Controlled Selects
 
----
+XUI `XUISingleSelect` uses `defaultSelectedOptionId` (uncontrolled). Force re-render on state change with `key`:
+```tsx
+<XUISingleSelect key={`${item.id}-field-${item.field}`} defaultSelectedOptionId={item.field}>
+```
+
+### Config-Driven Aggregation
+
+Aggregation types use `nrqlTemplate` strings interpolated at build time:
+```ts
+// AGGREGATION_TYPES[].nrqlTemplate: 'average({field})', 'percentile({field}, 95)', etc.
+config.nrqlTemplate.replace('{field}', item.field)
+```
 
 ## Domain Knowledge
 
 ### GTM Applications
 
-Three applications defined in `types/query.ts`:
-- `global-tax-mapper-api` (API)
-- `global-tax-mapper-bff` (BFF)
-- `global-tax-mapper-integrator-api` (Integrator API)
+Three apps defined in `APPLICATIONS` constant: API, BFF, Integrator API.
+NRQL app names: `{app}-{env}` (e.g., `global-tax-mapper-api-prod`)
 
-App names in NRQL combine with environment: `{app}-{env}` (e.g., `global-tax-mapper-api-prod`)
+### Environments
 
-### NRQL Query Structure
+Two environments: `prod` (Production), `uat` (UAT). Defined in `ENVIRONMENTS` constant.
 
-Generated queries follow this format:
-```sql
-FROM Transaction
-SELECT [metrics]
-WHERE appName IN ([apps]) AND [filters]
-TIMESERIES AUTO
-SINCE [time] UNTIL [time]
-FACET [field]
-```
+### NRQL Fields (`NRQL_FIELDS` array)
 
-### NRQL Fields
+| Field | Data Type | Can Facet | Can Search | Can Filter |
+|-------|-----------|-----------|------------|------------|
+| `duration` | numeric | ✗ | ✓ | ✓ |
+| `response.status` | string | ✓ | ✓ | ✓ |
+| `request.uri` | string | ✓ | ✓ | ✓ |
+| `request.method` | string | ✓ | ✓ | ✓ |
+| `name` | string | ✓ | ✗ | ✓ |
+| `appName` | string | ✓ | ✗ | ✗ |
 
-Field definitions live in `NRQL_FIELDS` constant:
+Derived constants: `SEARCH_FIELDS`, `FILTER_FIELDS`, `FACET_OPTIONS` (auto-generated from `NRQL_FIELDS`).
 
-| Field | Data Type | Can Aggregate | Can Facet |
-|-------|-----------|---------------|-----------|
-| `duration` | numeric | ✓ | ✗ |
-| `response.status` | string | ✗ | ✓ |
-| `request.uri` | string | ✗ | ✓ |
-| `http.method` | string | ✗ | ✓ |
-| `name` | string | ✗ | ✓ |
+### Aggregation Types (5 total, config-driven)
 
-### Aggregation Types
-
-| Type | Description |
-|------|-------------|
-| `count` | Total count (works for all fields) |
-| `average` | Average value (numeric fields only) |
-| `p95` | 95th percentile (numeric fields only) |
+| Type | Template | Numeric Only |
+|------|----------|-------------|
+| `average` | `average({field})` | ✓ |
+| `count` | `count({field})` | ✗ |
+| `p95` | `percentile({field}, 95)` | ✓ |
+| `uniques` | `uniques({field})` | ✗ |
+| `median` | `median({field})` | ✓ |
 
 ### Filter Behavior
 
 - Filters with empty values are ignored
 - When all metrics share the same filters, they're lifted to global WHERE
 - When filters differ, each metric uses `filter()` wrapper
-- Status codes support: exact (`404`), multiple (`404, 503`), fuzzy (`4xx`, `5%`)
+- Status codes: exact (`404`), multiple (`404, 503`), fuzzy (`4xx` → `LIKE '4%'`)
+- Filters support **negation** (`negated: boolean`): `=` → `!=`, `>` → `<=`, `LIKE` → `NOT LIKE`, `IN` → `NOT IN`
+- Operators are type-dependent: numeric fields get `>`, `>=`, `<`, `<=`, `=`; string fields get `=`, `IN`
 
-### Health Check Paths
+### Path Exclusions
 
-`HEALTH_CHECK_PATHS` constant defines endpoints excluded when `excludeHealthChecks: true`:
-- `/ping`, `/secureping`, `/health`, `/healthcheck`, `/secure-ping`, `/ready`, `/accountsV2/bulk`
+- `HEALTH_CHECK_PATHS`: `/ping`, `/secureping`, `/health`, `/healthcheck`, `/secure-ping`, `/ready`
+- `BULK_ENDPOINT_PATHS`: `/accountsV2/bulk` (separate constant, controlled by `excludeBulkEndpoint`)
+- Both use `request.uri NOT IN (...)` syntax
 
 ---

@@ -15,10 +15,10 @@ test.describe('Options, Facets, and Presets', () => {
       const healthCheckCheckbox = page.getByRole('checkbox', { name: 'Exclude health checks' });
       await expect(healthCheckCheckbox).toBeChecked();
 
-      // Query should contain request.uri not in clause
+      // Query should contain request.uri NOT IN clause
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).toBeVisible();
-      await expect(queryPreview).toContainText("request.uri not in");
+      await expect(queryPreview).toContainText("request.uri NOT IN");
       await expect(queryPreview).toContainText("/ping");
     });
 
@@ -28,10 +28,10 @@ test.describe('Options, Facets, and Presets', () => {
       await healthCheckCheckbox.uncheck();
       await expect(healthCheckCheckbox).not.toBeChecked();
 
-      // Query should NOT contain request.uri not in clause
+      // Query should NOT contain health check paths (e.g. /ping)
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).toBeVisible();
-      await expect(queryPreview).not.toContainText("request.uri not in");
+      await expect(queryPreview).not.toContainText("/ping");
     });
 
     test('6.4 Default timeseries - Use TIMESERIES is checked', async ({ page }) => {
@@ -87,25 +87,25 @@ test.describe('Options, Facets, and Presets', () => {
       await expect(queryPreview).toContainText("FACET response.status");
     });
 
-    test('7.3 Change to HTTP Method - Query updates', async ({ page }) => {
-      // Click facet dropdown and select HTTP Method
+    test('7.3 Change to Request Method - Query updates', async ({ page }) => {
+      // Click facet dropdown and select Request Method
       const facetDropdown = page.getByRole('combobox', { name: 'Facet By' });
       await facetDropdown.click();
-      await page.getByRole('option', { name: 'HTTP Method' }).waitFor({ state: 'visible' });
-      await page.getByRole('option', { name: 'HTTP Method' }).click();
+      await page.getByRole('option', { name: 'Request Method' }).waitFor({ state: 'visible' });
+      await page.getByRole('option', { name: 'Request Method' }).click();
 
-      // Query should contain FACET http.method
+      // Query should contain FACET request.method
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).toBeVisible();
-      await expect(queryPreview).toContainText("FACET http.method");
+      await expect(queryPreview).toContainText("FACET request.method");
     });
 
-    test('7.4 Change to Transaction Name - Query updates', async ({ page }) => {
-      // Click facet dropdown and select Transaction Name
+    test('7.4 Change to Name - Query updates', async ({ page }) => {
+      // Click facet dropdown and select Name
       const facetDropdown = page.getByRole('combobox', { name: 'Facet By' });
       await facetDropdown.click();
-      await page.getByRole('option', { name: 'Transaction Name' }).waitFor({ state: 'visible' });
-      await page.getByRole('option', { name: 'Transaction Name' }).click();
+      await page.getByRole('option', { name: 'Name' }).waitFor({ state: 'visible' });
+      await page.getByRole('option', { name: 'Name' }).click();
 
       // Query should contain FACET name
       const queryPreview = getQueryPreview(page);
@@ -128,23 +128,22 @@ test.describe('Options, Facets, and Presets', () => {
   });
 
   test.describe('Common Queries/Presets (8)', () => {
-    test('8.1 Preset panel visible - Shows all 5 preset buttons', async ({ page }) => {
+    test('8.1 Preset panel visible - Shows 3 preset buttons and Reset', async ({ page }) => {
       // Common Queries heading should be visible
       await expect(page.getByRole('heading', { name: 'Common Queries' })).toBeVisible();
 
-      // All 5 preset buttons should be visible
-      await expect(page.getByRole('button', { name: 'API Prod - Last Hour' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'All Apps Prod - Last Hour' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'API UAT - Last Hour' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'BFF Prod - Last 24 Hours' })).toBeVisible();
-      await expect(page.getByRole('button', { name: 'Integrator Prod - Last Hour' })).toBeVisible();
+      // All 3 preset buttons + Reset should be visible
+      await expect(page.getByRole('button', { name: 'API Throughput - Last 3 Hours' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'API Latency - Last 3 Hours' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'API Error Count' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Reset' })).toBeVisible();
     });
 
-    test('8.2 API Prod - Last Hour - Click updates form', async ({ page }) => {
+    test('8.2 API Throughput - Last 3 Hours - Click updates form', async ({ page }) => {
       // Click the preset
-      await page.getByRole('button', { name: 'API Prod - Last Hour' }).click();
+      await page.getByRole('button', { name: 'API Throughput - Last 3 Hours' }).click();
 
-      // Wait for state to update, then verify checkboxes
+      // API should be checked, others unchecked
       await expect(page.getByRole('checkbox', { name: 'API', exact: true })).toBeChecked();
       await expect(page.getByRole('checkbox', { name: 'BFF' })).not.toBeChecked();
       await expect(page.getByRole('checkbox', { name: 'Integrator API' })).not.toBeChecked();
@@ -153,71 +152,66 @@ test.describe('Options, Facets, and Presets', () => {
       const envDropdown = page.getByRole('combobox', { name: 'Environment' });
       await expect(envDropdown).toContainText('Production');
 
-      // Query should contain api-prod
+      // Query should contain api-prod and count
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).toBeVisible();
       await expect(queryPreview).toContainText('global-tax-mapper-api-prod');
+      await expect(queryPreview).toContainText('count');
     });
 
-    test('8.3 All Apps Prod - Last Hour - All apps selected', async ({ page }) => {
+    test('8.3 API Latency - Last 3 Hours - Click updates form', async ({ page }) => {
       // Click the preset
-      await page.getByRole('button', { name: 'All Apps Prod - Last Hour' }).click();
-
-      // All three apps should be checked
-      await expect(page.getByRole('checkbox', { name: 'API', exact: true })).toBeChecked();
-      await expect(page.getByRole('checkbox', { name: 'BFF' })).toBeChecked();
-      await expect(page.getByRole('checkbox', { name: 'Integrator API' })).toBeChecked();
-
-      // Query should contain all three apps
-      const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toBeVisible();
-      await expect(queryPreview).toContainText('global-tax-mapper-api-prod');
-      await expect(queryPreview).toContainText('global-tax-mapper-bff-prod');
-      await expect(queryPreview).toContainText('global-tax-mapper-integrator-api-prod');
-    });
-
-    test('8.4 API UAT - Last Hour - UAT environment selected', async ({ page }) => {
-      // Click the preset
-      await page.getByRole('button', { name: 'API UAT - Last Hour' }).click();
+      await page.getByRole('button', { name: 'API Latency - Last 3 Hours' }).click();
 
       // API should be checked
       await expect(page.getByRole('checkbox', { name: 'API', exact: true })).toBeChecked();
 
-      // Environment should be UAT
+      // Environment should be Production
       const envDropdown = page.getByRole('combobox', { name: 'Environment' });
-      await expect(envDropdown).toContainText('UAT');
+      await expect(envDropdown).toContainText('Production');
 
-      // Query should contain api-uat
+      // Query should contain api-prod and average(duration)
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).toBeVisible();
-      await expect(queryPreview).toContainText('global-tax-mapper-api-uat');
+      await expect(queryPreview).toContainText('global-tax-mapper-api-prod');
+      await expect(queryPreview).toContainText('average(duration)');
     });
 
-    test('8.5 BFF Prod - Last 24 Hours - BFF selected', async ({ page }) => {
-      // Click the preset  
-      await page.getByRole('button', { name: 'BFF Prod - Last 24 Hours' }).click();
-
-      // BFF should be checked, others unchecked
-      await expect(page.getByRole('checkbox', { name: 'BFF' })).toBeChecked();
-      await expect(page.getByRole('checkbox', { name: 'API', exact: true })).not.toBeChecked();
-
-      // Query should contain bff-prod
-      const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toBeVisible();
-      await expect(queryPreview).toContainText('global-tax-mapper-bff-prod');
-    });
-
-    test('8.6 Integrator Prod - Last Hour - Integrator selected', async ({ page }) => {
+    test('8.4 API Error Count - Click updates form', async ({ page }) => {
       // Click the preset
-      await page.getByRole('button', { name: 'Integrator Prod - Last Hour' }).click();
+      await page.getByRole('button', { name: 'API Error Count' }).click();
 
-      // Integrator API should be checked
-      await expect(page.getByRole('checkbox', { name: 'Integrator API' })).toBeChecked();
+      // API should be checked
+      await expect(page.getByRole('checkbox', { name: 'API', exact: true })).toBeChecked();
 
-      // Query should contain integrator-api-prod
+      // Environment should be Production
+      const envDropdown = page.getByRole('combobox', { name: 'Environment' });
+      await expect(envDropdown).toContainText('Production');
+
+      // Query should contain api-prod and FACET request.uri
       const queryPreview = getQueryPreview(page);
       await expect(queryPreview).toBeVisible();
-      await expect(queryPreview).toContainText('global-tax-mapper-integrator-api-prod');
+      await expect(queryPreview).toContainText('global-tax-mapper-api-prod');
+      await expect(queryPreview).toContainText('FACET request.uri');
+    });
+
+    test('8.5 Reset - Restores default state', async ({ page }) => {
+      // First apply a preset to change state
+      await page.getByRole('button', { name: 'API Error Count' }).click();
+
+      // Then click Reset
+      await page.getByRole('button', { name: 'Reset' }).click();
+
+      // Default state: API checked, Production selected
+      await expect(page.getByRole('checkbox', { name: 'API', exact: true })).toBeChecked();
+
+      const envDropdown = page.getByRole('combobox', { name: 'Environment' });
+      await expect(envDropdown).toContainText('Production');
+
+      // Query should still contain api-prod
+      const queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toBeVisible();
+      await expect(queryPreview).toContainText('global-tax-mapper-api-prod');
     });
   });
 });

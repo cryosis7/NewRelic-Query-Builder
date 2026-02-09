@@ -17,7 +17,7 @@ test.describe('Query Preview', () => {
       await expect(queryPreview).toContainText('FROM Transaction');
       await expect(queryPreview).toContainText('SELECT');
       await expect(queryPreview).toContainText('WHERE');
-      await expect(queryPreview).toContainText('appName in');
+      await expect(queryPreview).toContainText('appName IN');
     });
 
     test('9.2 Valid query has correct structure', async ({ page }) => {
@@ -58,7 +58,7 @@ test.describe('Query Preview', () => {
       // Should have proper structure
       expect(queryText).toContain('FROM Transaction');
       expect(queryText).toContain('average(duration)');
-      expect(queryText).toContain("appName in ('global-tax-mapper-api-prod')");
+      expect(queryText).toContain("appName IN ('global-tax-mapper-api-prod')");
       expect(queryText).toContain('TIMESERIES AUTO');
       expect(queryText).toContain('FACET request.uri');
     });
@@ -88,8 +88,7 @@ test.describe('Query Preview', () => {
     });
 
     test('11.3 Invalid relative time - Shows error message', async ({ page }) => {
-      // Switch to relative mode
-      await page.getByRole('radio', { name: 'Relative' }).click();
+      // Default mode is already 'relative', no need to click the radio
 
       // Enter invalid value
       const relativeInput = page.getByRole('textbox', { name: 'Relative' });
