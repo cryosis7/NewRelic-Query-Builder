@@ -5,6 +5,7 @@ npm-debug.log*
 # E2E test artifacts
 playwright-report/
 test-results/
+coverage/
 
 yarn-debug.log*
 yarn-error.log*
