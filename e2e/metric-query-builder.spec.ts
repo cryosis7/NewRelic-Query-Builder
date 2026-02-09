@@ -26,7 +26,7 @@ test.describe("Metric Query Builder", () => {
   };
 
   test.describe("Metric Items (4.1)", () => {
-    test("4.1.1 Default metric - One metric with Duration type and Average aggregation", async ({
+    test("Default metric - One metric with Duration type and Average aggregation", async ({
       page,
     }) => {
       // Should have exactly one metric item
@@ -46,7 +46,7 @@ test.describe("Metric Query Builder", () => {
       await expect(queryPreview).toContainText("average(duration)");
     });
 
-    test("4.1.2 Add second metric - Click Add metric, verify second appears", async ({
+    test("Add second metric - Click Add metric, verify second appears", async ({
       page,
     }) => {
       // Click Add metric button
@@ -62,9 +62,7 @@ test.describe("Metric Query Builder", () => {
       );
     });
 
-    test("4.1.3 Remove metric - When 2+ exist, remove one", async ({
-      page,
-    }) => {
+    test("Remove metric - When 2+ exist, remove one", async ({ page }) => {
       // Add second metric
       await page.getByRole("button", { name: "Add metric" }).click();
       await expect(page.getByText("Metric 2")).toBeVisible();
@@ -88,7 +86,7 @@ test.describe("Metric Query Builder", () => {
       );
     });
 
-    test("4.1.4 Cannot remove last - Remove button disabled when only one metric", async ({
+    test("Cannot remove last - Remove button disabled when only one metric", async ({
       page,
     }) => {
       // With only one metric, Remove button should not exist (not rendered)
@@ -98,7 +96,7 @@ test.describe("Metric Query Builder", () => {
   });
 
   test.describe("Metric Type Selection (4.2)", () => {
-    test("4.2.1 Duration is default type with Average aggregation", async ({
+    test("Duration is default type with Average aggregation", async ({
       page,
     }) => {
       // Default metric type dropdown should already show Duration
@@ -114,7 +112,7 @@ test.describe("Metric Query Builder", () => {
       await expect(queryPreview).toContainText("average(duration)");
     });
 
-    test("4.2.2 Request URI with Count shows count(request.uri)", async ({
+    test("Request URI with Count shows count(request.uri)", async ({
       page,
     }) => {
       // Select Request URI type
@@ -130,7 +128,7 @@ test.describe("Metric Query Builder", () => {
       await expect(queryPreview).toContainText("count(request.uri)");
     });
 
-    test("4.2.3 Response Status with Count shows count(response.status)", async ({
+    test("Response Status with Count shows count(response.status)", async ({
       page,
     }) => {
       // Click the metric type dropdown
@@ -148,9 +146,7 @@ test.describe("Metric Query Builder", () => {
       await expect(queryPreview).toContainText("count(response.status)");
     });
 
-    test("4.2.4 Duration with Average shows average(duration)", async ({
-      page,
-    }) => {
+    test("Duration with Average shows average(duration)", async ({ page }) => {
       // Select Duration type
       await getMetricTypeCombobox(page).click();
       await page.getByRole("option", { name: "Duration" }).click();
@@ -164,7 +160,7 @@ test.describe("Metric Query Builder", () => {
       await expect(queryPreview).toContainText("average(duration)");
     });
 
-    test("4.2.5 Duration with P95 shows percentile(duration, 95)", async ({
+    test("Duration with P95 shows percentile(duration, 95)", async ({
       page,
     }) => {
       // Select Duration type
@@ -182,7 +178,7 @@ test.describe("Metric Query Builder", () => {
   });
 
   test.describe("Aggregation Constraints (4.3)", () => {
-    test("4.3.1 Non-duration (Response Status) only has non-numerical aggregation options", async ({
+    test("Non-duration (Response Status) only has non-numerical aggregation options", async ({
       page,
     }) => {
       // First, switch to Response Status (a string field)
@@ -209,7 +205,7 @@ test.describe("Metric Query Builder", () => {
       await expect(medianOption).not.toBeVisible();
     });
 
-    test("4.3.2 Switch from Duration to string field and select Count updates query", async ({
+    test("Switch from Duration to string field and select Count updates query", async ({
       page,
     }) => {
       // Default is Duration with Average, verify it
