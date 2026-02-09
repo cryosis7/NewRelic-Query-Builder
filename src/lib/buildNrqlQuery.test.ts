@@ -1156,7 +1156,7 @@ describe("buildNrqlQuery", () => {
         const expected = buildExpectedQuery({
           select: "count(duration)",
           apps: ["global-tax-mapper-api"],
-          additionalWhereConditions: ["request.uri != /api/test"],
+          additionalWhereConditions: ["request.uri != '/api/test'"],
         });
         expect(result).toBe(expected);
       });
@@ -1769,7 +1769,7 @@ describe("buildNrqlQuery", () => {
       const expected = buildExpectedQuery({
         select: "count(duration)",
         apps: ["global-tax-mapper-api"],
-        additionalWhereConditions: ["request.uri = /api/test"],
+        additionalWhereConditions: ["request.uri = '/api/test'"],
       });
       expect(result).toBe(expected);
     });
