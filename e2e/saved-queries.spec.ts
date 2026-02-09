@@ -121,7 +121,7 @@ test.describe("Saved Queries", () => {
   });
 
   test.describe("Delete Flow", () => {
-    test("Delete button removes saved query", async ({ page }) => {
+    test("Edit mode allows removing a saved query", async ({ page }) => {
       // Save a query first
       await page.getByRole("button", { name: /Save Query/i }).click();
       const dialog = page.getByRole("dialog");
@@ -135,11 +135,14 @@ test.describe("Saved Queries", () => {
       });
       await expect(savedButton).toBeVisible();
 
-      // Click the delete icon button
-      const deleteButton = page.getByRole("button", {
+      // Enter edit mode
+      await page.getByRole("button", { name: "Edit" }).click();
+
+      // Click the negative chip to remove
+      const removeButton = page.getByRole("button", {
         name: /Remove saved query: To Delete/i,
       });
-      await deleteButton.click();
+      await removeButton.click();
 
       // Saved query should be gone
       await expect(
@@ -175,11 +178,12 @@ test.describe("Saved Queries", () => {
       await dialog.getByLabel("Query Name").fill("Temp Query");
       await dialog.getByRole("button", { name: "Save" }).click();
 
-      // Delete it
-      const deleteButton = page.getByRole("button", {
+      // Enter edit mode and delete it
+      await page.getByRole("button", { name: "Edit" }).click();
+      const removeButton = page.getByRole("button", {
         name: /Remove saved query: Temp Query/i,
       });
-      await deleteButton.click();
+      await removeButton.click();
 
       // Reload the page
       await page.reload();
@@ -189,6 +193,96 @@ test.describe("Saved Queries", () => {
       await expect(
         page.getByRole("button", { name: "Temp Query", exact: true }),
       ).not.toBeVisible();
+    });
+  });
+
+  test.describe("Edit Mode", () => {
+    test("Edit button appears when saved queries exist", async ({ page }) => {
+      // No edit button when no saved queries
+      await expect(
+        page.getByRole("button", { name: "Edit", exact: true }),
+      ).not.toBeVisible();
+
+      // Save a query
+      await page.getByRole("button", { name: /Save Query/i }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Query Name").fill("Visibility Test");
+      await dialog.getByRole("button", { name: "Save" }).click();
+
+      // Edit button should now be visible
+      await expect(
+        page.getByRole("button", { name: "Edit", exact: true }),
+      ).toBeVisible();
+    });
+
+    test("Edit mode toggles to Done", async ({ page }) => {
+      // Save a query
+      await page.getByRole("button", { name: /Save Query/i }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel("Query Name").fill("Toggle Test");
+      await dialog.getByRole("button", { name: "Save" }).click();
+
+      // Click Edit
+      await page.getByRole("button", { name: "Edit", exact: true }).click();
+
+      // Should show Done button
+      await expect(
+        page.getByRole("button", { name: "Done", exact: true }),
+      ).toBeVisible();
+
+      // Click Done to exit edit mode
+      await page.getByRole("button", { name: "Done", exact: true }).click();
+
+      // Should show Edit button again
+      await expect(
+        page.getByRole("button", { name: "Edit", exact: true }),
+      ).toBeVisible();
+    });
+  });
+
+  test.describe("Staleness", () => {
+    test("Shows warning on stale saved query", async ({ page }) => {
+      // Inject a saved query with an invalid field into localStorage
+      const staleQuery = {
+        id: "stale-1",
+        name: "Stale Query",
+        nrqlQuery: "SELECT count(removed.field) FROM Transaction",
+        state: {
+          applications: ["global-tax-mapper-api"],
+          environment: "prod",
+          metricItems: [
+            {
+              id: "m-1",
+              field: "removed.field",
+              aggregationType: "count",
+              filters: [],
+            },
+          ],
+          timePeriod: { mode: "relative", relative: "3h ago" },
+          excludeHealthChecks: true,
+          excludeBulkEndpoint: true,
+          useTimeseries: true,
+          facet: "none",
+        },
+        createdAt: "2026-01-01T00:00:00Z",
+      };
+      await page.evaluate((q) => {
+        localStorage.setItem("saved-queries", JSON.stringify([q]));
+      }, staleQuery);
+      await page.reload();
+      await page.waitForLoadState("networkidle");
+
+      const savedButton = page.getByRole("button", {
+        name: "Stale Query",
+        exact: true,
+      });
+      await expect(savedButton).toBeVisible();
+
+      // Check tooltip contains warning about stale/unavailable fields
+      await expect(savedButton).toHaveAttribute(
+        "title",
+        /no longer available/i,
+      );
     });
   });
 

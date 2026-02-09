@@ -1,8 +1,11 @@
+import { useState, useMemo } from "react";
 import { useAtomValue, useSetAtom } from "jotai";
-import XUIButton, { XUIIconButton } from "@xero/xui/react/button";
+import XUIButton from "@xero/xui/react/button";
 import { XUIPanelSection, XUIPanelSectionHeading } from "@xero/xui/react/panel";
 import crossSmall from "@xero/xui-icon/icons-es6/cross-small";
+import warning from "@xero/xui-icon/icons-es6/warning";
 import { QUERY_PRESETS } from "../data/presets";
+import { validateSavedQuery } from "../lib/validateSavedQuery";
 import { Flex, FlexItem } from "./layout";
 import {
   applyPresetAtom,
@@ -16,6 +19,19 @@ export function CommonQueriesPanelSection() {
   const reset = useSetAtom(resetAtom);
   const savedQueries = useAtomValue(savedQueriesAtom);
   const deleteSavedQuery = useSetAtom(deleteSavedQueryAtom);
+  const [isEditing, setIsEditing] = useState(false);
+  const effectiveIsEditing = isEditing && savedQueries.length > 0;
+
+  const validationResults = useMemo(
+    () =>
+      new Map(
+        savedQueries.map((saved) => [
+          saved.id,
+          validateSavedQuery(saved.state, saved.nrqlQuery),
+        ]),
+      ),
+    [savedQueries],
+  );
 
   return (
     <XUIPanelSection className="xui-padding-large">
@@ -34,35 +50,54 @@ export function CommonQueriesPanelSection() {
             {preset.name}
           </XUIButton>
         ))}
-        {savedQueries.map((saved) => (
-          <Flex key={saved.id} gap="2px" align="center">
+        {savedQueries.map((saved) => {
+          const validation = validationResults.get(saved.id);
+          const isStale = validation && !validation.valid;
+
+          return effectiveIsEditing ? (
             <XUIButton
-              variant="standard"
+              key={saved.id}
+              variant="negative"
               size="small"
-              onClick={() => applyPreset(saved.state)}
-              title={saved.nrqlQuery}
+              onClick={() => deleteSavedQuery(saved.id)}
+              aria-label={`Remove saved query: ${saved.name}`}
+              rightIcon={crossSmall}
             >
               {saved.name}
             </XUIButton>
-            <XUIIconButton
-              ariaLabel={`Remove saved query: ${saved.name}`}
-              icon={crossSmall}
-              iconSize="small"
-              iconColor="red"
-              size="xsmall"
-              onClick={() => deleteSavedQuery(saved.id)}
-            />
-          </Flex>
-        ))}
+          ) : (
+            <XUIButton
+              key={saved.id}
+              variant="standard"
+              size="small"
+              onClick={() => applyPreset(saved.state)}
+              title={isStale ? validation.warnings.join("\n") : saved.nrqlQuery}
+              leftIcon={isStale ? warning : undefined}
+            >
+              {saved.name}
+            </XUIButton>
+          );
+        })}
         <FlexItem style={{ marginLeft: "auto" }}>
-          <XUIButton
-            variant="standard"
-            size="small"
-            onClick={() => reset()}
-            title="Reset to default query"
-          >
-            Reset
-          </XUIButton>
+          <Flex gap="8px">
+            {savedQueries.length > 0 && (
+              <XUIButton
+                variant="standard"
+                size="small"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {effectiveIsEditing ? "Done" : "Edit"}
+              </XUIButton>
+            )}
+            <XUIButton
+              variant="standard"
+              size="small"
+              onClick={() => reset()}
+              title="Reset to default query"
+            >
+              Reset
+            </XUIButton>
+          </Flex>
         </FlexItem>
       </Flex>
     </XUIPanelSection>
