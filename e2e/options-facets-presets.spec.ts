@@ -10,7 +10,7 @@ test.describe("Options, Facets, and Presets", () => {
   const getQueryPreview = (page: Page) =>
     page.getByRole("group", { name: "Generated Query" });
 
-  test.describe("Options (6)", () => {
+  test.describe("Options", () => {
     test("Default health check - Exclude health checks is checked", async ({
       page,
     }) => {
@@ -71,7 +71,7 @@ test.describe("Options, Facets, and Presets", () => {
     });
   });
 
-  test.describe("Facet Selection (7)", () => {
+  test.describe("Facet Selection", () => {
     test("Default facet - Request URI selected with FACET clause", async ({
       page,
     }) => {
@@ -152,7 +152,7 @@ test.describe("Options, Facets, and Presets", () => {
     });
   });
 
-  test.describe("Common Queries/Presets (8)", () => {
+  test.describe("Common Queries/Presets", () => {
     test("Preset panel visible - Shows 3 preset buttons and Reset", async ({
       page,
     }) => {
@@ -248,25 +248,83 @@ test.describe("Options, Facets, and Presets", () => {
       await expect(queryPreview).toContainText("FACET request.uri");
     });
 
-    test("Reset - Restores default state", async ({ page }) => {
-      // First apply a preset to change state
-      await page.getByRole("button", { name: "API Error Count" }).click();
+    test("Reset - Restores all options to defaults after modification", async ({
+      page,
+    }) => {
+      const bffCheckbox = page.getByRole("checkbox", { name: "BFF" });
+      await bffCheckbox.check();
+      await expect(bffCheckbox).toBeChecked();
 
-      // Then click Reset
-      await page.getByRole("button", { name: "Reset" }).click();
+      const envDropdown = page.getByRole("combobox", { name: "Environment" });
+      await envDropdown.click();
+      await page.getByRole("option", { name: "UAT" }).click();
+      await expect(envDropdown).toContainText("UAT");
 
-      // Default state: API checked, Production selected
+      const timePeriodDropdown = page.getByRole("combobox", {
+        name: "Time Period",
+      });
+      await timePeriodDropdown.click();
+      await page.getByRole("option", { name: "30m ago" }).click();
+      const relativeInput = page.getByRole("textbox", { name: "Relative" });
+      await expect(relativeInput).toHaveValue("30m ago");
+
+      const healthCheckCheckbox = page.getByRole("checkbox", {
+        name: "Exclude health checks",
+      });
+      await healthCheckCheckbox.uncheck();
+      await expect(healthCheckCheckbox).not.toBeChecked();
+
+      const bulkEndpointCheckbox = page.getByRole("checkbox", {
+        name: "Exclude bulk endpoint",
+      });
+      await bulkEndpointCheckbox.uncheck();
+      await expect(bulkEndpointCheckbox).not.toBeChecked();
+
+      const timeseriesCheckbox = page.getByRole("checkbox", {
+        name: "As Timeseries",
+      });
+      await timeseriesCheckbox.uncheck();
+      await expect(timeseriesCheckbox).not.toBeChecked();
+
+      const facetDropdown = page.getByRole("combobox", { name: "Facet By" });
+      await facetDropdown.click();
+      await page.getByRole("option", { name: "No Facet" }).click();
+      await expect(facetDropdown).toContainText("No Facet");
+
+      let queryPreview = getQueryPreview(page);
+      await expect(queryPreview).toContainText("uat");
+      await expect(queryPreview).toContainText("30 minutes ago");
+      await expect(queryPreview).not.toContainText("/ping");
+      await expect(queryPreview).not.toContainText("TIMESERIES");
+      await expect(queryPreview).not.toContainText("FACET");
+
+      const resetButton = page.getByRole("button", { name: "Reset" });
+      await resetButton.click();
+
       await expect(
         page.getByRole("checkbox", { name: "API", exact: true }),
       ).toBeChecked();
-
-      const envDropdown = page.getByRole("combobox", { name: "Environment" });
+      await expect(bffCheckbox).not.toBeChecked();
+      await expect(
+        page.getByRole("checkbox", { name: "Integrator API" }),
+      ).not.toBeChecked();
       await expect(envDropdown).toContainText("Production");
+      await expect(relativeInput).toHaveValue("3h ago");
+      await expect(healthCheckCheckbox).toBeChecked();
+      await expect(bulkEndpointCheckbox).toBeChecked();
+      await expect(timeseriesCheckbox).toBeChecked();
+      await expect(facetDropdown).toContainText("Request URI");
 
-      // Query should still contain api-prod
-      const queryPreview = getQueryPreview(page);
-      await expect(queryPreview).toBeVisible();
+      queryPreview = getQueryPreview(page);
       await expect(queryPreview).toContainText("global-tax-mapper-api-prod");
+      await expect(queryPreview).toContainText("3 hours ago");
+      await expect(queryPreview).toContainText("/ping"); // health checks excluded
+      await expect(queryPreview).toContainText("TIMESERIES AUTO");
+      await expect(queryPreview).toContainText("FACET request.uri");
+
+      await timePeriodDropdown.click();
+      const selectedOption = page.getByRole("option", { name: "3h ago" });
+      await expect(selectedOption).toHaveAttribute("aria-selected", "true");
     });
   });
 });

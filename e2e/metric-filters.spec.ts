@@ -10,8 +10,8 @@ test.describe("Metric Filters", () => {
   const getQueryPreview = (page: Page) =>
     page.getByRole("group", { name: "Generated Query" });
 
-  test.describe("Adding/Removing Filters (5.1)", () => {
-    test('5.1.1 Add filter - Click "+ Add filter", verify filter row appears', async ({
+  test.describe("Adding/Removing Filters", () => {
+    test('Add filter - Click "+ Add filter", verify filter row appears', async ({
       page,
     }) => {
       // Click Add filter button
@@ -29,7 +29,7 @@ test.describe("Metric Filters", () => {
       ).toBeVisible();
     });
 
-    test("5.1.2 Remove filter - Click X button on filter, verify removed", async ({
+    test("Remove filter - Click X button on filter, verify removed", async ({
       page,
     }) => {
       // First add a filter
@@ -45,7 +45,7 @@ test.describe("Metric Filters", () => {
       await expect(page.getByText("Field")).not.toBeVisible();
     });
 
-    test("5.1.3 Empty filter value - Filter ignored, no query error", async ({
+    test("Empty filter value - Filter ignored, no query error", async ({
       page,
     }) => {
       // Add a filter but leave value empty
@@ -66,8 +66,8 @@ test.describe("Metric Filters", () => {
     });
   });
 
-  test.describe("Duration Filters (5.2)", () => {
-    test("5.2.1 Duration > threshold - Set Duration > 0.5, verify query", async ({
+  test.describe("Duration Filters", () => {
+    test("Duration > threshold - Set Duration > 0.5, verify query", async ({
       page,
     }) => {
       // Add filter
@@ -82,7 +82,7 @@ test.describe("Metric Filters", () => {
       await expect(queryPreview).toContainText("duration > 0.5");
     });
 
-    test("5.2.2 Change operator - Change to >=, verify query updates", async ({
+    test("Change operator - Change to >=, verify query updates", async ({
       page,
     }) => {
       // Add filter with value
@@ -108,7 +108,7 @@ test.describe("Metric Filters", () => {
       await expect(queryPreview).toContainText("duration >= 0.5");
     });
 
-    test("5.2.3 All duration operators work", async ({ page }) => {
+    test("All duration operators work", async ({ page }) => {
       // Add filter with value
       await page.getByRole("button", { name: "Add Filter" }).click();
       await page.getByRole("textbox", { name: "Value" }).fill("1");
@@ -138,8 +138,8 @@ test.describe("Metric Filters", () => {
     });
   });
 
-  test.describe("Response Status Filters (5.3)", () => {
-    test("5.3.1 Select response.status field - Change filter field", async ({
+  test.describe("Response Status Filters", () => {
+    test("Select response.status field - Change filter field", async ({
       page,
     }) => {
       // Add filter
@@ -157,9 +157,7 @@ test.describe("Metric Filters", () => {
       await expect(queryPreview).toContainText("response.status = 200");
     });
 
-    test('5.3.2 Exact status code - Enter "404", verify query', async ({
-      page,
-    }) => {
+    test('Exact status code - Enter "404", verify query', async ({ page }) => {
       // Add filter and select Response Status
       await page.getByRole("button", { name: "Add Filter" }).click();
       // Click field dropdown using its accessible label
@@ -175,7 +173,7 @@ test.describe("Metric Filters", () => {
       await expect(queryPreview).toContainText("response.status = 404");
     });
 
-    test('5.3.3 Pattern (4xx) - Enter "4xx", verify query uses LIKE', async ({
+    test('Pattern (4xx) - Enter "4xx", verify query uses LIKE', async ({
       page,
     }) => {
       // Add filter and select Response Status
@@ -195,9 +193,7 @@ test.describe("Metric Filters", () => {
   });
 
   test.describe("Multiple Filters", () => {
-    test("5.1.4 Add multiple filters - Combine with AND logic", async ({
-      page,
-    }) => {
+    test("Add multiple filters - Combine with AND logic", async ({ page }) => {
       // Add first filter
       await page.getByRole("button", { name: "Add Filter" }).click();
       await page.getByRole("textbox", { name: "Value" }).fill("0.5");

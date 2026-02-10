@@ -12,8 +12,6 @@ npm run lint       # Lint
 npm run build      # Build
 ```
 
-Note: This project uses `rolldown-vite` (aliased via npm overrides), not standard Vite.
-
 ## Architecture
 
 ### Data Flow
@@ -38,8 +36,6 @@ User Interaction → Component → useAtom(primitiveAtom) → State Update
 | **Types** | `src/types/query.ts` | All types, interfaces, constants, helpers |
 | **Presets** | `src/data/presets.ts` | Pre-configured `QueryPreset` definitions |
 | **E2E** | `e2e/` | Playwright browser tests |
-
-Each layer has its own `AGENTS.md` with detailed patterns — see the relevant file when working in that area.
 
 ## Project Structure
 
@@ -89,6 +85,22 @@ e2e/                          # Playwright E2E tests (8 spec files)
 
 ## Project Conventions
 
+## Development Workflow
+
+Modifications or minor changes do not need to follow this flow, however large refactors or new feature do.
+
+Test Driven Development practices should be followed.
+This process is for large refactors or developing new features and MUST be followed in this order:
+
+- Explore the existing structure and how the new feature will be integrated
+- Draw on any relevant knowledge in your skills or tool set.
+- Plan the feature development work, including unit/e2e tests that codify the requirements
+- (RED) Delegate agents to write e2e and unit tests; parallelise these if possible.
+- (GREEN) Delegate an agent to write the minimum, simplest code necessary to make the test pass. The focus is on passing the test, not perfect implementation.
+- (REFACTOR) Delegate an agent to clean up and restructure the code, improving readability, structure, and removing duplication while ensuring all tests still pass.
+- Run all tests, including unit tests with coverage and linting. Code coverage must meet 100% branch coverage
+- Review the implementation against the requirements and repeat as necessary.
+
 ### Critical Rules
 
 1. **Always use XUI components** — never raw HTML form elements (`<input>`, `<button>`, `<select>`)
@@ -96,21 +108,6 @@ e2e/                          # Playwright E2E tests (8 spec files)
 3. **Jotai atoms for state** — state lives in `src/atoms/`, components consume via `useAtom`
 4. **Use constants** — import from `src/types/query.ts`, never hardcode values
 5. **Barrel exports** — import from `src/atoms/index.ts` and `src/components/index.ts`
-
-### XUI `key` Pattern for Controlled Selects
-
-XUI `XUISingleSelect` uses `defaultSelectedOptionId` (uncontrolled). Force re-render on state change with `key`:
-```tsx
-<XUISingleSelect key={`${item.id}-field-${item.field}`} defaultSelectedOptionId={item.field}>
-```
-
-### Config-Driven Aggregation
-
-Aggregation types use `nrqlTemplate` strings interpolated at build time:
-```ts
-// AGGREGATION_TYPES[].nrqlTemplate: 'average({field})', 'percentile({field}, 95)', etc.
-config.nrqlTemplate.replace('{field}', item.field)
-```
 
 ## Domain Knowledge
 

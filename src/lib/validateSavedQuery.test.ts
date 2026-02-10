@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { validateSavedQuery } from "./validateSavedQuery";
-import { buildNrqlQuery } from "./buildNrqlQuery";
+import * as buildNrqlQueryModule from "./buildNrqlQuery";
 import type {
-  QueryState,
+  AggregationType,
   Application,
   Environment,
-  AggregationType,
+  QueryState,
 } from "../types/query";
 
 // Helper to create a valid QueryState for testing
@@ -122,6 +122,31 @@ describe("validateSavedQuery", () => {
     );
   });
 
+  it("does not warn about valid filter fields", () => {
+    const state = createValidState({
+      metricItems: [
+        {
+          id: "test-1",
+          field: "duration",
+          aggregationType: "count",
+          filters: [
+            {
+              id: "f-1",
+              field: "response.status",
+              operator: "=",
+              value: "200",
+              negated: false,
+            },
+          ],
+        },
+      ],
+    });
+    const result = validateSavedQuery(state);
+    expect(
+      result.warnings.filter((w) => w.includes("Filter field")),
+    ).toHaveLength(0);
+  });
+
   it("warns about unknown facet", () => {
     const state = createValidState({
       facet: "removed.facet",
@@ -135,6 +160,12 @@ describe("validateSavedQuery", () => {
 
   it("does not warn about 'none' facet", () => {
     const state = createValidState({ facet: "none" });
+    const result = validateSavedQuery(state);
+    expect(result.valid).toBe(true);
+  });
+
+  it("does not warn about valid facet", () => {
+    const state = createValidState({ facet: "request.uri" });
     const result = validateSavedQuery(state);
     expect(result.valid).toBe(true);
   });
@@ -171,7 +202,7 @@ describe("validateSavedQuery", () => {
 
   it("does not warn when regenerated query matches saved", () => {
     const state = createValidState();
-    const expectedQuery = buildNrqlQuery(state);
+    const expectedQuery = buildNrqlQueryModule.buildNrqlQuery(state);
     const result = validateSavedQuery(state, expectedQuery);
     expect(result.valid).toBe(true);
   });
@@ -221,5 +252,54 @@ describe("validateSavedQuery", () => {
         result.warnings.filter((w) => w.includes("Aggregation")),
       ).toHaveLength(0);
     }
+  });
+
+  it("warns about invalid time period mode", () => {
+    const state = createValidState({
+      timePeriod: {
+        mode: "invalid" as unknown as QueryState["timePeriod"]["mode"],
+        relative: "3h ago",
+      },
+    });
+    const result = validateSavedQuery(state);
+    expect(result.valid).toBe(false);
+    expect(result.warnings).toContain(
+      "Time period mode 'invalid' is not recognized",
+    );
+  });
+
+  it("does not warn about absolute time period mode", () => {
+    const state = createValidState({
+      timePeriod: {
+        mode: "absolute",
+        since: "2025-01-01T00:00:00",
+        until: "2025-01-02T00:00:00",
+        relative: "3h ago",
+      },
+    });
+    const result = validateSavedQuery(state);
+    expect(
+      result.warnings.filter((w) => w.includes("Time period mode")),
+    ).toHaveLength(0);
+  });
+
+  it("warns when buildNrqlQuery throws an error", () => {
+    const state = createValidState();
+
+    // Mock buildNrqlQuery to throw an error
+    const spy = vi
+      .spyOn(buildNrqlQueryModule, "buildNrqlQuery")
+      .mockImplementation(() => {
+        throw new Error("Test error");
+      });
+
+    const result = validateSavedQuery(state, "SELECT * FROM Transaction");
+
+    expect(result.valid).toBe(false);
+    expect(result.warnings).toContain(
+      "Unable to regenerate query from saved state",
+    );
+
+    spy.mockRestore();
   });
 });

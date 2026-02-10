@@ -380,6 +380,30 @@ describe("buildNrqlQuery", () => {
       expect(result).toMatch(/UNTIL '2026-01-28 09:00:00 [+-]\d{2}:\d{2}'/);
     });
 
+    it("formats negative timezone offset correctly", () => {
+      // Mock getTimezoneOffset to return a positive value (e.g., UTC-5 returns 300)
+      // This will make timezoneOffset negative after the negation
+      const originalGetTimezoneOffset = Date.prototype.getTimezoneOffset;
+      Date.prototype.getTimezoneOffset = () => 300; // UTC-5
+
+      const state = createTestState({
+        timePeriod: {
+          mode: "absolute",
+          since: "2026-01-28T08:00",
+          until: "2026-01-28T09:00",
+          relative: "1h ago",
+        },
+      });
+      const result = buildNrqlQuery(state);
+
+      // Should have negative timezone offset
+      expect(result).toMatch(/SINCE '2026-01-28 08:00:00 -05:00'/);
+      expect(result).toMatch(/UNTIL '2026-01-28 09:00:00 -05:00'/);
+
+      // Restore original method
+      Date.prototype.getTimezoneOffset = originalGetTimezoneOffset;
+    });
+
     it("uses default since/until when absolute mode has empty strings", () => {
       const state = createTestState({
         timePeriod: {

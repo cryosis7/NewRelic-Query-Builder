@@ -25,7 +25,7 @@ test.describe("Metric Query Builder", () => {
     return aggregationComboboxes.nth(metricIndex - 1);
   };
 
-  test.describe("Metric Items (4.1)", () => {
+  test.describe("Metric Items", () => {
     test("Default metric - One metric with Duration type and Average aggregation", async ({
       page,
     }) => {
@@ -95,7 +95,7 @@ test.describe("Metric Query Builder", () => {
     });
   });
 
-  test.describe("Metric Type Selection (4.2)", () => {
+  test.describe("Metric Type Selection", () => {
     test("Duration is default type with Average aggregation", async ({
       page,
     }) => {
@@ -177,7 +177,7 @@ test.describe("Metric Query Builder", () => {
     });
   });
 
-  test.describe("Aggregation Constraints (4.3)", () => {
+  test.describe("Aggregation Constraints", () => {
     test("Non-duration (Response Status) only has non-numerical aggregation options", async ({
       page,
     }) => {

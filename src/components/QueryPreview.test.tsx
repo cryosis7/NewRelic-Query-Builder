@@ -294,5 +294,59 @@ describe("QueryPreview", () => {
       expect(screen.getByRole("dialog")).toBeInTheDocument();
       expect(screen.getByLabelText(/Query Name/i)).toBeInTheDocument();
     });
+
+    it("saves query when Save is clicked in modal", async () => {
+      const user = userEvent.setup();
+      const store = createStore();
+      store.set(applicationsAtom, ["global-tax-mapper-api"]);
+      store.set(environmentAtom, "prod");
+      store.set(metricItemsAtom, [createMetricItem("duration", "count")]);
+
+      render(
+        <Provider store={store}>
+          <QueryPreview />
+        </Provider>,
+      );
+
+      // Open modal
+      await user.click(screen.getByRole("button", { name: /save query/i }));
+
+      // Type a name
+      await user.type(screen.getByLabelText(/Query Name/i), "Test Query");
+
+      // Click Save
+      await user.click(screen.getByRole("button", { name: "Save" }));
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+    });
+
+    it("closes modal when Cancel is clicked", async () => {
+      const user = userEvent.setup();
+      const store = createStore();
+      store.set(applicationsAtom, ["global-tax-mapper-api"]);
+      store.set(environmentAtom, "prod");
+      store.set(metricItemsAtom, [createMetricItem("duration", "count")]);
+
+      render(
+        <Provider store={store}>
+          <QueryPreview />
+        </Provider>,
+      );
+
+      // Open modal
+      await user.click(screen.getByRole("button", { name: /save query/i }));
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+      // Click Cancel
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      });
+    });
   });
 });

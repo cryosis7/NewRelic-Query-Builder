@@ -99,4 +99,54 @@ describe("SaveQueryModal", () => {
     const saveButton = screen.getByRole("button", { name: "Save" });
     expect(saveButton).toBeDisabled();
   });
+
+  it("saves query when Enter key is pressed with valid name", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    const onClose = vi.fn();
+    render(
+      <SaveQueryModal {...defaultProps} onSave={onSave} onClose={onClose} />,
+    );
+
+    const input = screen.getByLabelText(/Query Name/i);
+    await user.type(input, "My Query{Enter}");
+
+    expect(onSave).toHaveBeenCalledWith("My Query");
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("does not save when Enter is pressed with empty name", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(<SaveQueryModal {...defaultProps} onSave={onSave} />);
+
+    const input = screen.getByLabelText(/Query Name/i);
+    await user.type(input, "{Enter}");
+
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("does not save when Enter is pressed with whitespace-only name", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(<SaveQueryModal {...defaultProps} onSave={onSave} />);
+
+    const input = screen.getByLabelText(/Query Name/i);
+    await user.type(input, "   {Enter}");
+
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("does not trigger save when other keys are pressed", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(<SaveQueryModal {...defaultProps} onSave={onSave} />);
+
+    const input = screen.getByLabelText(/Query Name/i);
+    await user.type(input, "Test");
+    await user.keyboard("{Escape}");
+    await user.keyboard("{Tab}");
+
+    expect(onSave).not.toHaveBeenCalled();
+  });
 });

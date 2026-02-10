@@ -36,7 +36,7 @@ export function SaveQueryModal({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && name.trim()) {
+    if (e.key === "Enter") {
       handleSave();
     }
   };
