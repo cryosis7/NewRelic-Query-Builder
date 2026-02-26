@@ -11,7 +11,7 @@ React + TypeScript + Vite app for building New Relic NRQL queries targeting Glob
 ### Critical Rules
 
 1. **Always use XUI components** — never raw HTML form elements (`<input>`, `<button>`, `<select>`)
-2. **Tests required** — update tests when modifying code, run `npm run test` after changes
+2. **100% Branch Coverage required** — update tests when modifying code, run `npm run test` after changes. Project must maintain 100% branch coverage.
 3. **Jotai atoms for state** — state lives in `src/atoms/`, components consume via `useAtom`
 4. **Use constants** — import types and constants from `src/types/query.ts`, never hardcode
 5. **Barrel exports** — import from `src/atoms/index.ts` and `src/components/index.ts`

@@ -195,6 +195,7 @@ export const HEALTH_CHECK_PATHS = [
   "/healthcheck",
   "/secure-ping",
   "/ready",
+  "/tax-category/balance/healthcheck",
 ];
 
 export const BULK_ENDPOINT_PATHS = ["/accountsV2/bulk"];
